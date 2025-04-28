@@ -1,0 +1,55 @@
+# Ignore Python stuff
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+venv/
+env/
+.venv/
+
+# Ignore environment and secrets files
+.env
+.env.*
+*.dotenv
+
+# Ignore DBT artifacts
+dbt_packages/
+target/
+dbt_modules/
+
+# DBT logs
+logs/
+dbt.log
+manifest.json
+run_results.json
+catalog.json
+sources.json
+profiles.yml  # careful: sometimes you want to keep a template of this!
+
+# Ignore temporary files
+*.DS_Store
+*.swp
+*.bak
+*.tmp
+*~
+
+# Ignore Jupyter Notebooks checkpoints (if you use notebooks)
+.ipynb_checkpoints/
+
+# Ignore system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Optional: VSCode settings (if you use VSCode)
+.vscode/
+
+# Ignore DLT specific outputs (if any tmp files or metadata)
+.dlt/
+
+# Pip metadata
+pip-wheel-metadata/
+*.egg-info/
+build/
+dist/
