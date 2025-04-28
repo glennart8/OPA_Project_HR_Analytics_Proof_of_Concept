@@ -13,11 +13,6 @@ env/
 .env.*
 *.dotenv
 
-# Ignore DBT artifacts
-dbt_packages/
-target/
-dbt_modules/
-
 # DBT logs
 logs/
 dbt.log
