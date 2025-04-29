@@ -1,0 +1,28 @@
+SOURCE
+En source i dbt representerar data direkt från din källsystem
+
+STAGING
+Staging-modeller transformerar och renar din raw-data för första gången. 
+Här döper du om kolumner, filtrerar bort skräp, skapar datatyper, sätter NULL där det behövs osv
+
+DIMS
+Dimensionstabeller innehåller beskrivande attribut. Dessa är ofta statiska och används för att beskriva faktatabeller.
+
+FACTS
+Faktatabeller innehåller mätdatan – alltså det du vill analysera. Dessa är oftast händelser, transaktioner eller mätvärden.
+- fact_jobs – varje rad representerar en jobbannons
+- ID, datum, field_id (FK), employer_id (FK), antal visningar, publiceringsdatum
+Fungerar som den centrala tabellen i stjärnschemat. Kan aggregeras och analyseras.
+
+MARTS
+Mart-modeller är slutprodukter, ofta anpassade efter ett visst affärsbehov eller en dashboard.
+De bygger på dina fakta- och dimensionstabeller och kan vara aggregerade rapporter.
+- mart_job_trends_by_field – antal jobbannonser per fält och månad
+- mart_employer_activity – vilka arbetsgivare publicerar flest annonser
+
+
+Source: Du laddar in rådata via DLT → t.ex. raw.jobs
+Staging: Skapar rena stg_jobs, t.ex. med korrekt kolumnnamn
+Dims: Skapar dim_fields och dim_employers
+Fact: Skapar fact_jobs som refererar till dim_fields och dim_employers
+Mart: Du skapar t.ex. mart_job_trends som grupperar annonser per fält över tid
