@@ -33,16 +33,16 @@ models:
   HT_analytics:
     +materialized: view
 
-    src:
-     +materialized: ephemeral # Körs inte som vyer och kan därför inte granskas
+    src: 
+      +materialized: ephemeral
 
     dim:
-    +schema: refined
+      +schema: refined
 
     fct:
-      schema: refined
+      +schema: refined
 
-    marts: 
+    marts:
       +schema: marts
-    # Config indicated by + and applies to all files under models/example/
+
 

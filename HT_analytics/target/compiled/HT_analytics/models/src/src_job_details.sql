@@ -1,4 +1,4 @@
-with stg_job_ads as (select * from "job_ads"."staging"."job_ads")
+with stg_job_details as (select * from "job_ads"."staging"."job_ads")
 
 select
     id, -- För att joina job_details
@@ -10,4 +10,4 @@ select
     salary_type__label as salary_type,
     scope_of_work__min as scope_of_work_min,
     scope_of_work__max as scope_of_work_max
-from stg_job_ads
+from stg_job_details
