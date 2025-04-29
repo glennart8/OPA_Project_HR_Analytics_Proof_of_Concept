@@ -31,5 +31,18 @@ clean-targets:         # directories to be removed by `dbt clean`
 # files using the `{{ config(...) }}` macro.
 models:
   HT_analytics:
+    +materialized: view
+
+    src:
+     +materialized: ephemeral
+
+    dim:
+    +schema: refined
+
+    fct:
+      schema: refined
+
+    marts: 
+      +schema: marts
     # Config indicated by + and applies to all files under models/example/
 
