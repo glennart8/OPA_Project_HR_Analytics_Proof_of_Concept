@@ -5,8 +5,6 @@ select
     id,
     employer__workplace,
     workplace_address__municipality,
-    auxilliary_attributes,
-
     number_of_vacancies as vacancies,
     relevance,
     application_deadline

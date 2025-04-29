@@ -1,4 +1,4 @@
-with stg_job_ads as (select * from {{ source('job_ads', 'stg_ads') }})
+with stg_employer as (select * from {{ source('job_ads', 'stg_ads') }})
 
 select
     id, -- För att joina företaget
@@ -10,4 +10,4 @@ select
     workplace_postcode,
     workplace_city,
     workplace_country
-from stg_job_ads
+from stg_employer

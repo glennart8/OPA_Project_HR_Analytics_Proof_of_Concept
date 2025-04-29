@@ -34,7 +34,7 @@ models:
     +materialized: view
 
     src:
-     +materialized: ephemeral
+     +materialized: ephemeral # Körs inte som vyer och kan därför inte granskas
 
     dim:
     +schema: refined
