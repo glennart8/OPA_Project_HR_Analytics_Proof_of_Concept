@@ -9,7 +9,7 @@ select
     number_of_vacancies as vacancies,
     relevance,
     application_deadline,
-    experience_required,
+    experience_required, -- Var tvugna att ha dessa här för att kunna hämta dem i fct
     driving_license_required as driver_license,
     access_to_own_car
 from stg_job_ads
