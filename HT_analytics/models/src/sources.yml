@@ -2,5 +2,5 @@ sources:
   - name: job_ads
     schema: staging
     tables:
-      - name: stg_ads
-        identifier: job_ads
+      - name: stg_ads # smeknamn
+        identifier: job_ads # namnet i databasen
