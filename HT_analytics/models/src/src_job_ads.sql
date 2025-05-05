@@ -1,7 +1,8 @@
 with stg_job_ads as (select * from {{ source('job_ads', 'stg_ads') }})
 
 select
-    occupation__label, -- Varför använder vi denna i stället för id??
+    -- 
+    occupation__concept_id, -- för att joina med yrke
     id, -- för job_details
     -- id_aux, -- HUR SKAPA ID:N???
     employer__workplace,
