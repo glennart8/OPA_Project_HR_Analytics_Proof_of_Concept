@@ -5,6 +5,7 @@ select
     employer_name,
     employer_workplace,
     employer_organization_number,
+    workplace_address__municipality,
     workplace_street_address,
     workplace_region,
     workplace_postcode,
