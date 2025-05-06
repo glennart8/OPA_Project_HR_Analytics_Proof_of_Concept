@@ -1,5 +1,5 @@
 -- Visar inom vilket område flest tjänster finns (sorterat på group)
-WITH mart_most_wanted AS (SELECT * FROM {{ ref('fct_job_ads') }})
+WITH mart_most_wanted AS (SELECT * FROM "job_ads"."refined"."fct_job_ads")
 
 SELECT o.occupation_group
 FROM mart_most_wanted m
