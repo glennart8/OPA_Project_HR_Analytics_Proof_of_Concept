@@ -1,5 +1,8 @@
--- Visar inom vilket område flest tjänster finns (sorterat på group)
-WITH mart_most_wanted AS (SELECT * FROM {{ ref('fct_job_ads') }})
+
+  
+  create view "job_ads"."marts"."mart_most_wanted__dbt_tmp" as (
+    -- Visar inom vilket område flest tjänster finns (sorterat på group)
+WITH mart_most_wanted AS (SELECT * FROM "job_ads"."refined"."fct_job_ads")
 
 SELECT o.occupation_group
 FROM mart_most_wanted m
@@ -9,3 +12,4 @@ WHERE e.workplace_address__municipality = 'Göteborg'
 GROUP BY o.occupation_group
 ORDER BY SUM(m.vacancies) DESC
 LIMIT 1
+  );
