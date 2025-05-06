@@ -13,7 +13,8 @@ select
     application_deadline,
     experience_required, -- Var tvugna att ha dessa här för att kunna hämta dem i fct
     driving_license_required as driver_license,
-    access_to_own_car
+    access_to_own_car,
+    publication_date
 from stg_job_ads
 ), fct_job_ads as (select * from __dbt__cte__src_job_ads)
 
@@ -24,7 +25,8 @@ select
     md5(cast(coalesce(cast(experience_required as TEXT), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(driver_license as TEXT), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(access_to_own_car as TEXT), '_dbt_utils_surrogate_key_null_') as TEXT)) as auxilliary_attributes_id,
     vacancies,
     relevance,
-    application_deadline
+    application_deadline,
+    publication_date
 
 from fct_job_ads
 

@@ -12,5 +12,6 @@ select
     application_deadline,
     experience_required, -- Var tvugna att ha dessa här för att kunna hämta dem i fct
     driving_license_required as driver_license,
-    access_to_own_car
+    access_to_own_car,
+    publication_date
 from stg_job_ads

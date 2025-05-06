@@ -9,7 +9,7 @@
 -- 3 kpi:er som visar antalet annonser inom respk. område
 
 
--- visar antalet tjänster per område
+-- visar antalet tjänster per område - PGA APPEND SÅ DUBBLAS TJÄNSTERNA! WHAT TO DO!?!
 WITH mart_vac_per_field AS (SELECT * FROM "job_ads"."refined"."fct_job_ads")
 
     SELECT
