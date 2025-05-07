@@ -23,12 +23,12 @@ WHERE
     AND e.workplace_address__municipality = 'Göteborg'
     AND o.occupation_group LIKE '%lärare%'
 
-GROUP BY 
-    a.experience_required,
-    jd.scope_of_work_min,
-    e.workplace_address__municipality,
-    o.occupation_group,
-    m.vacancies
+-- GROUP BY 
+--     a.experience_required,
+--     jd.scope_of_work_min,
+--     e.workplace_address__municipality,
+--     o.occupation_group,
+--     m.vacancies
 
 ORDER BY
     m.vacancies DESC
