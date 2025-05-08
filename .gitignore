@@ -1,6 +1,8 @@
 # DATABASE
 *.duckdb
 
+target/
+
 # Ignore Python stuff
 __pycache__/
 *.py[cod]

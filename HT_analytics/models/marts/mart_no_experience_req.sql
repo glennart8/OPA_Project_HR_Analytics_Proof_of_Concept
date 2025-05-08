@@ -4,7 +4,7 @@ SELECT
     -- jd.headline,                              -- headline                     från job_details
     a.experience_required,                       -- experience_required från     från auxillary
     jd.scope_of_work_min,                        -- employment_type              från job_details
-    e.workplace_address__municipality,           -- workplace_city               från employer
+    e.workplace_municipality,                    -- workplace_city               från employer
     o.occupation_group,                          -- occupation_group             från occupation
     m.vacancies                                  -- vacancies                    från fact
 
@@ -17,15 +17,15 @@ JOIN refined.dim_occupation o ON m.occupation_id = o.occupation_id
 WHERE 
     a.experience_required = 'False'
     AND jd.scope_of_work_min < 100
-    AND e.workplace_address__municipality = 'Göteborg'
+    AND e.workplace_municipality = 'Göteborg'
     AND o.occupation_group LIKE '%lärare%'
 
-GROUP BY 
-    a.experience_required,
-    jd.scope_of_work_min,
-    e.workplace_address__municipality,
-    o.occupation_group,
-    m.vacancies
+-- GROUP BY 
+--     a.experience_required,
+--     jd.scope_of_work_min,
+--     e.workplace_address__municipality,
+--     o.occupation_group,
+--     m.vacancies
 
 ORDER BY
     m.vacancies DESC
