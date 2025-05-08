@@ -13,14 +13,15 @@ WITH mart_trends AS (
     SELECT 
         m.vacancies,
         o.occupation_group,
-        o.occupation_field_id,
+       -- o.occupation_field_id,
         DATE_TRUNC('month', m.publication_date) AS month -- DATE_TRUNC används för att hämta månad och år från publiceringsdatumet
     FROM {{ ref('fct_job_ads') }} m
     JOIN refined.dim_occupation o ON m.occupation_id = o.occupation_id
     JOIN refined.dim_employer e ON m.employer_id = e.employer_id
-    WHERE e.workplace_address__municipality = 'Göteborg'
+    WHERE e.workplace_municipality = 'Göteborg'
       AND m.publication_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '3 months'
-      AND o.occupation_field_id = 'j7Cq_ZJe_GkT' -- Visar endast 'Bygg och anläggning'
+      --AND o.occupation_field_id = 'j7Cq_ZJe_GkT' -- Visar endast 'Bygg och anläggning'
+      
 ),
 
 -- visar månatliga totalsummor av tjänster per yrkesgrupp

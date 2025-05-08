@@ -10,12 +10,12 @@
 WITH mart_vac_per_field AS (SELECT * FROM "job_ads"."refined"."fct_job_ads")
 
     SELECT
-        SUM(m.vacancies) AS total_vacancies, -- COUNT ger 300 k tjänster, SUM ger 468k tjänster,
+        SUM(m.vacancies) AS total_vacancies,
         o.occupation_field
 
     FROM mart_vac_per_field m
-    JOIN refined.dim_occupation o ON m.occupation_id = o.occupation_id
-    JOIN refined.dim_employer e ON m.employer_id = e.employer_id
-    WHERE e.workplace_address__municipality = 'Göteborg'
+    LEFT JOIN refined.dim_occupation o ON m.occupation_id = o.occupation_id
+    LEFT JOIN refined.dim_employer e ON m.employer_id = e.employer_id
+    WHERE e.workplace_municipality = 'Göteborg'
     GROUP BY o.occupation_field
     ORDER BY total_vacancies DESC
