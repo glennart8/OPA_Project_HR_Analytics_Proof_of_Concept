@@ -9,5 +9,5 @@ select
     workplace_address__postcode as workplace_postcode,
     workplace_address__city as workplace_city,
     workplace_address__country as workplace_country,
-    workplace_address__municipality
+    workplace_address__municipality as workplace_municipality,
 from stg_employer
