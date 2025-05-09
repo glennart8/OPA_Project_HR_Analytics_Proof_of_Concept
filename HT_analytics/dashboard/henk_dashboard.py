@@ -6,9 +6,10 @@ import streamlit as st
 con = duckdb.connect('../job_ads.duckdb')
 
 # 1. Välj kommun, fält och yrkestitel
-# 2. Visa dessa tillsammans med namnet på företaget och en headline
-
-
+# 2. Filtrera och visa dessa DYNAMISKT tillsammans med namnet på företaget och org.nummer
+# 3. Eventuell fortsättning: 
+#                           skapa en graf med antalet annonser per kommun och yrkestitel
+#                           På en karta, dynamiskt visa var aretsplatserna ligger        
 
 # HÄMTA UNIKA KOMMUNER
 municipalities = con.execute("""
@@ -16,9 +17,10 @@ municipalities = con.execute("""
     FROM refined.dim_employer                 
 """).fetchdf()['workplace_municipality'].dropna().sort_values().tolist()
 
+# Skapar listan 'Alla' som visar alla jobb
+municipalities = ['Alla'] + municipalities 
 municipality_filter = st.selectbox("Välj kommun:", municipalities)
-municipality_filter_lower = municipality_filter.lower()
-st.write("Vald kommun:", municipality_filter)
+
 
 # HÄMTA UNIKA YRKESFÄLT
 occupation_fields = con.execute("""
@@ -26,33 +28,53 @@ occupation_fields = con.execute("""
     FROM refined.dim_occupation
 """).fetchdf()['occupation_field'].dropna().sort_values().tolist()
 
+occupation_fields = ['Alla'] + occupation_fields
 occupation_field_filter = st.selectbox("Välj yrkesfält:", occupation_fields)
-st.write("Valt yrkesfält:", occupation_field_filter)
+
 
 # HÄMTA UNIKA YRKEN
 occupations = con.execute("""
     SELECT DISTINCT occupation
     FROM refined.dim_occupation
     WHERE occupation_field = ?
-""", (occupation_field_filter,)).fetchdf()['occupation'].unique()
+""", (occupation_field_filter,)).fetchdf()['occupation'].dropna().sort_values().tolist()
 
+occupations = ['Alla'] + occupations
 occupation_filter = st.selectbox("Välj yrkeskategori:", occupations)
-st.write("Vald yrkeskategori:", occupation_filter)
 
-# VISA ARBETEN EFTER ATT DE FILTRERATS
-filtered_jobs = con.execute("""
+### Definiera SQL-frågan med parametrar för filtrering, som kan ändras dynamiskt
+query = """
     SELECT *
     FROM marts.mart_vacancies_by_mun_field_occ
-    WHERE workplace_municipality = ?
-    AND occupation = ?
-    ORDER BY occupation
-""", (municipality_filter_lower, occupation_filter)).fetchdf()
+    WHERE 1=1 -- För att kunna appenda senare (lägga till filtren), smart ju
+"""
+params = []
 
-# För att dölja municipality, måste finnas med i marts för att filtrera
-filtered_jobs = filtered_jobs.drop(columns=["workplace_municipality"])
+# När användaren völjer något annat än 'Alla' så filtreras det på den valda kommunen
+if municipality_filter != 'Alla':
+    query += " AND workplace_municipality = ?"
+    params.append(municipality_filter.lower())
 
-# Visa de filtrerade jobben
-st.dataframe(filtered_jobs)
+if occupation_field_filter != 'Alla':
+    query += " AND occupation_field = ?"
+    params.append(occupation_field_filter)
+
+if occupation_filter != 'Alla':
+    query += " AND occupation = ?"
+    params.append(occupation_filter)
+
+query += " ORDER BY occupation"
+
+filtered_jobs = con.execute(query, params).fetchdf()
+
+# För att dölja municipality och occupation_field, måste finnas med i marts för att filtrera
+filtered_jobs = filtered_jobs.drop(columns=["workplace_municipality", "occupation_field"])
+
+# Visar ett "felmeddelande" om det inte finns några jobb att visa
+if filtered_jobs.empty:
+    st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
+else:
+    st.dataframe(filtered_jobs)
 
 
 
