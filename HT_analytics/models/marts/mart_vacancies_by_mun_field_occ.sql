@@ -9,7 +9,7 @@ SELECT
     o.occupation,
     o.occupation_field,
     e.employer_name,
-    f.vacancies,
+    f.vacancies, 
     e.employer_organization_number,
     LOWER(e.workplace_municipality) AS workplace_municipality  -- Behövs för filtrering
 FROM fct f

@@ -8,7 +8,7 @@ con = duckdb.connect('../job_ads.duckdb')
 
 # --- CONTAINER ---
 # --- CONTAINER INOM KOLUMN (50%) ---
-col_filter, _ = st.columns([1, 1])  # col_filter = 50% av sidan
+col_filter, _ = st.columns([1, 1])  # col_filter blir bara på 50% av kolumnen
 
 with col_filter:
     with st.container():
@@ -77,6 +77,7 @@ with col_resultat:
     else:
         st.dataframe(filtered_jobs, hide_index=True)
 
+        # Om man har kryssat i plats och fält ska knappar visas för mer info
         if municipality_filter != 'Alla' and occupation_field_filter != 'Alla':
             for index, row in filtered_jobs.iterrows():
                 job_id = row['job_details_id']
@@ -127,3 +128,21 @@ with col_resultat:
 with col_statistik:
     st.header("📊 Statistik")
     st.metric("Antal jobbannonser", len(filtered_jobs))
+    
+        # Hämta data från mart_vacancies_per_field
+    stats_df = con.execute("""
+        SELECT * FROM marts.mart_vac_per_field
+        ORDER BY total_vacancies DESC
+    """).fetchdf()
+
+    # Skapa 3 kolumner för att visa yrkesfält
+    cols = st.columns(3)
+
+    # Vi skapar en tuple med etiketter och värden för de tre första yrkesfälten och antal annonser
+    labels = stats_df['occupation_field'].tolist()  # De tre första yrkesfälten
+    values = stats_df['total_vacancies'].astype(int).tolist()  # Omvandla till heltal för att slippa decimal
+
+    # Iterera och visa värdena i respektive kolumn
+    for col, label, value in zip(cols, labels, values):
+        with col:  # Specificera vilken kolumn vi skriver till
+            st.metric(label=label, value=str(value))
