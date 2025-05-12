@@ -1,27 +1,21 @@
-WITH mart_by_mun_field_occ AS (
+WITH fct AS (
     SELECT *
     FROM {{ ref('fct_job_ads') }}
 )
 
+
 SELECT 
-    LOWER(e.workplace_municipality) AS workplace_municipality,
-    o.occupation_field,
+    f.job_details_id, -- Hitta ett annat unikt id för varje annons för att sedan kunna använda det i mart_vacancies_by_city
     o.occupation,
-    SUM(m.vacancies) AS total_vacancies
-
-FROM mart_by_mun_field_occ m
-JOIN refined.dim_employer e ON m.employer_id = e.employer_id
-JOIN refined.dim_occupation o ON m.occupation_id = o.occupation_id
-
+    o.occupation_field,
+    e.employer_name,
+    f.vacancies,
+    e.employer_organization_number,
+    LOWER(e.workplace_municipality) AS workplace_municipality  -- Behövs för filtrering
+FROM fct f
+JOIN refined.dim_employer e ON f.employer_id = e.employer_id
+JOIN refined.dim_occupation o ON f.occupation_id = o.occupation_id
 WHERE 
     e.workplace_municipality IS NOT NULL
-    AND o.occupation_field IS NOT NULL
+    AND e.employer_name IS NOT NULL
     AND o.occupation IS NOT NULL
-
-GROUP BY 
-    LOWER(e.workplace_municipality),
-    o.occupation_field,
-    o.occupation
-
-ORDER BY 
-    total_vacancies DESC

@@ -9,5 +9,8 @@ select
     duration__label as duration,
     salary_type__label as salary_type,
     scope_of_work__min as scope_of_work_min,
-    scope_of_work__max as scope_of_work_max
+    scope_of_work__max as scope_of_work_max,
+    webpage_url,
+    description__conditions as description_conditions,
+
 from stg_job_details
