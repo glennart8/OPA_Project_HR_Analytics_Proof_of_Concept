@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import duckdb
+import plotly.express as px
 from dashboard_common import load_data
 
 # connecta till databas
@@ -8,15 +9,6 @@ con = duckdb.connect('../job_ads.duckdb')
 
 # Minska marginalerna på sidorna
 st.set_page_config(layout="wide")
-
-
-# Dummydata – kan vara en databas eller annan datakälla i verkligheten
-df = pd.DataFrame({
-    "Kategori": ["A", "A", "B", "B", "C", "C"],
-    "Status": ["Pågående", "Avslutad", "Pågående", "Avslutad", "Pågående", "Avslutad"],
-    "Ansvarig": ["Anna", "Erik", "Anna", "Erik", "Anna", "Erik"],
-    "Arbete": ["Projekt 1", "Projekt 2", "Projekt 3", "Projekt 4", "Projekt 5", "Projekt 6"]
-})
 
 # Skapa tre kolumner
 col1, col2, col3 = st.columns([0.5, 1, 1])  # [vänster, mitten, höger]
@@ -145,23 +137,75 @@ with col2:
 with col3:
     st.header("Statistik")
 
-    population_df = pd.read_csv("Kommun_befolking_2024.csv")
+    # Statistik från mart och befolkningsdata
+    population_df = pd.read_csv("kommun_befolkning_2024.csv")
     population_df["Kommun"] = population_df["Kommun"].str.strip().str.title()
 
     query = """
         SELECT workplace_municipality AS Kommun,
-            occupation_field,
-            occupation AS YrkesGrupp
-            SUM(total_vacancies) AS Antal_lediga_jobb
-
+               occupation_field,
+               occupation AS Yrkesgrupp,
+               SUM(total_vacancies) AS Antal_lediga_jobb
         FROM marts.mart_vacancies_by_mun_field_occ
-        GROUP BY worlplace_municipality, occupation_field, occupation
-        """
+        GROUP BY workplace_municipality, occupation_field, occupation
+    """
 
     job_df = load_data(query)
     job_df["Kommun"] = job_df["Kommun"].str.strip().str.title()
 
-    df_stat = pd.merge(job_df, population_df, on = "Kommon", how="inner")
+    df_stat = pd.merge(job_df, population_df, on="Kommun", how="inner") #Mergar på Kommun där kommunerna finns i båda df
+    df_stat["Jobb per 1000 invånare"] = (
+        df_stat["Antal_lediga_jobb"] * 1000 / df_stat["Folkmängd"] #Räknar ut jobb per 1000 invånare
+    ).round(2)
+   
+    if occupation_field_filter != "Alla" and municipality_filter == "Alla":
+        total_df = (
+            df_stat[df_stat["occupation_field"] == occupation_field_filter]
+            .groupby("Yrkesgrupp")
+            .agg({"Antal_lediga_jobb": "sum", "Folkmängd": "sum"})
+            .reset_index()
+        )
+        total_df["Jobb per 1000 invånare"] = (
+            total_df["Antal_lediga_jobb"] * 1000 / total_df["Folkmängd"]
+        ).round(2)
+
+        st.subheader(f"Yrkesfält: {occupation_field_filter} i hela landet")
+        st.dataframe(total_df[["Yrkesgrupp", "Antal_lediga_jobb", "Jobb per 1000 invånare"]], hide_index=True)
+
+        fig = px.bar(
+            total_df.sort_values("Antal_lediga_jobb", ascending=False).head(10),
+            x="Yrkesgrupp",
+            y="Antal_lediga_jobb",
+            title="Topp 10 yrken i hela landet",
+            labels={"Yrkesgrupp": "Yrke", "Antal_lediga_jobb": "Antal jobb"}
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif occupation_field_filter != "Alla" and municipality_filter != "Alla" and occupation_filter != "Alla":
+        st.subheader(f"{municipality_filter.title()} – {occupation_field_filter} – {occupation_filter}")
+
+        vald_df = df_stat[
+            (df_stat["occupation_field"] == occupation_field_filter) &
+            (df_stat["Kommun"].str.lower() == municipality_filter.lower()) &
+            (df_stat["Yrkesgrupp"] == occupation_filter)
+        ]
+        st.dataframe(vald_df[["Antal_lediga_jobb", "Folkmängd", "Jobb per 1000 invånare"]], hide_index=True)
+
+        top_yrken = df_stat[
+            (df_stat["occupation_field"] == occupation_field_filter) &
+            (df_stat["Kommun"].str.lower() == municipality_filter.lower())
+        ]
+        top_yrken = top_yrken.groupby("Yrkesgrupp")["Antal_lediga_jobb"].sum().reset_index()
+        top_yrken = top_yrken.sort_values("Antal_lediga_jobb", ascending=False).head(10)
+
+        fig = px.bar(
+            top_yrken,
+            x="Yrkesgrupp",
+            y="Antal_lediga_jobb",
+            title="Topp 10 yrken i kommunen",
+            labels={"Yrkesgrupp": "Yrke", "Antal_lediga_jobb": "Antal jobb"}
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
 
     
