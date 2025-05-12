@@ -8,5 +8,6 @@ select
     coalesce(workplace_municipality, 'kommun ej angiven') as workplace_municipality,
     coalesce(workplace_region, 'region ej angiven') as workplace_region,
     coalesce(workplace_country, 'land ej angiven') as workplace_country,
-    coalesce(workplace_city, 'stad ej angiven') as workplace_city
+    coalesce(workplace_city, 'stad ej angiven') as workplace_city,
+    coalesce(employer_url, 'url ej angiven') as employer_url
 from employer

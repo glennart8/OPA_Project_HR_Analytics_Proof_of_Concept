@@ -15,8 +15,6 @@ WITH mart_vac_per_field AS (SELECT * FROM {{ref('fct_job_ads')}})
 
     FROM mart_vac_per_field m
     LEFT JOIN refined.dim_occupation o ON m.occupation_id = o.occupation_id
-    LEFT JOIN refined.dim_employer e ON m.employer_id = e.employer_id
-    WHERE e.workplace_municipality = 'Göteborg'
     GROUP BY o.occupation_field
     ORDER BY total_vacancies DESC
     
