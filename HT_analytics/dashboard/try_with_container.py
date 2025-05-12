@@ -2,12 +2,27 @@ import streamlit as st
 import pandas as pd
 import duckdb
 
-# Setup
+# --- Först, sätt upp sidkonfigurationen ---
 st.set_page_config(layout="wide")
+
+# CSS för bakgrund
+st.markdown(
+    f"""
+    <style>
+    .stApp {{
+        background-image: url("https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
+        background-size: cover;
+        background-position: center;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Setup DuckDB-anslutning
 con = duckdb.connect('../job_ads.duckdb')
 
-# --- CONTAINER ---
-# --- CONTAINER INOM KOLUMN (50%) ---
+# --- KONTAINER FÖR FILTRERING ---
 col_filter, _ = st.columns([1, 1])  # col_filter blir bara på 50% av kolumnen
 
 with col_filter:
@@ -17,11 +32,11 @@ with col_filter:
         col_kommun, col_falt, col_yrke = st.columns(3)
 
         with col_kommun:
-            municipalities = con.execute("""
-                SELECT DISTINCT workplace_municipality
-                FROM refined.dim_employer                 
+            municipalities = con.execute(""" 
+                SELECT DISTINCT workplace_municipality 
+                FROM refined.dim_employer 
             """).fetchdf()['workplace_municipality'].dropna().sort_values().tolist()
-            municipalities = ['Alla'] + municipalities 
+            municipalities = ['Alla'] + municipalities
             municipality_filter = st.selectbox("Välj kommun:", municipalities)
 
         with col_falt:
@@ -44,7 +59,7 @@ with col_filter:
 # --- TVÅ KOLUMNER: Resultat & Statistik ---
 col_resultat, col_statistik = st.columns([1.5, 1])  # [mitten, höger]
 
-# --- MITTEN ---
+# --- MITTEN: JOBBRESULTAT ---
 with col_resultat:
     st.header("🍹 Lediga jobb")
 
@@ -70,12 +85,13 @@ with col_resultat:
     query += " ORDER BY occupation"
 
     filtered_jobs = con.execute(query, params).fetchdf()
-    filtered_jobs = filtered_jobs.drop(columns=["workplace_municipality", "occupation_field"])
+    filtered_jobs_to_show = filtered_jobs.drop(columns=["workplace_municipality", "occupation_field", "job_details_id"])
+
 
     if filtered_jobs.empty:
         st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
     else:
-        st.dataframe(filtered_jobs, hide_index=True)
+        st.dataframe(filtered_jobs_to_show, hide_index=True)
 
         # Om man har kryssat i plats och fält ska knappar visas för mer info
         if municipality_filter != 'Alla' and occupation_field_filter != 'Alla':
@@ -124,12 +140,12 @@ with col_resultat:
                     else:
                         st.warning("Inga detaljer tillgängliga för denna tjänst.")
 
-# --- HÖGER ---
+# --- HÖGER: STATISTIK ---
 with col_statistik:
     st.header("📊 Statistik")
     st.metric("Antal jobbannonser", len(filtered_jobs))
     
-        # Hämta data från mart_vacancies_per_field
+    # Hämta data från mart_vacancies_per_field
     stats_df = con.execute("""
         SELECT * FROM marts.mart_vac_per_field
         ORDER BY total_vacancies DESC
@@ -146,3 +162,4 @@ with col_statistik:
     for col, label, value in zip(cols, labels, values):
         with col:  # Specificera vilken kolumn vi skriver till
             st.metric(label=label, value=str(value))
+
