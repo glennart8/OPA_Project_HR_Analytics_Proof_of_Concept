@@ -2,6 +2,8 @@ import pandas as pd
 import duckdb
 import plotly
 import streamlit as st
+from dashboard_common import load_data
+
 
 con = duckdb.connect('../job_ads.duckdb')
 
@@ -81,56 +83,66 @@ else:
     
 ##################### CHOOSE A VACANCY ######################
 
-    # # Skapa knappar för varje jobbannons
-    # for index, row in filtered_jobs.iterrows():
-    #     job_id = row['id']  
-    #     job_headline = row['headline']
+# Om man valt kommun och fält - visa knappar
+if municipality_filter != 'Alla' and occupation_field_filter != 'Alla':
+
+    # Skapa knappar för varje jobbannons
+    for index, row in filtered_jobs.iterrows():
+        job_id = row['job_details_id']  # använder rätt nyckel
+        employer = row['employer_name']
+        occupation = row['occupation']
         
-    #     # Skapa en knapp för varje jobb
-    #     if st.button(f"Visa detaljer för {job_headline}"):
-    #         # När knappen trycks, kör SQL-frågan för att hämta detaljer för den valda tjänsten
-    #         vacancy_details_query = """
-    #             WITH mart_chosen_vacancy AS (
-    #                 SELECT * FROM {{ ref('fct_job_ads') }}
-    #             )
-    #             SELECT
-    #                 jd.headline,                                 
-    #                 jd.description,                                         
-    #                 jd.employment_type,
-    #                 jd.duration,
-    #                 jd.salary_type,
-    #                 jd.scope_of_work_min,
-    #                 jd.scope_of_work_max,    
-    #                 jd.webpage_url,
-    #                 jd.description_conditions,                            
-    #                 a.experience_required,
-    #                 a.driver_license,    
-    #                 m.publication_date,
-    #                 m.application_deadline
-    #             FROM mart_chosen_vacancy m
-    #             JOIN refined.dim_auxilliary_attributes a ON m.auxilliary_attributes_id = a.id_aux
-    #             JOIN refined.dim_job_details jd ON m.job_details_id = jd.job_details_id
-    #             WHERE m.id = ?
-    #         """
-    #         # Kör SQL-frågan för den valda tjänsten
-    #         vacancy_details = con.execute(vacancy_details_query, (job_id,)).fetchdf()
-            
-    #         # Visa detaljer för den valda tjänsten
-    #         if not vacancy_details.empty:
-    #             st.write(f"**{vacancy_details['headline'][0]}**")
-    #             st.write(f"**Beskrivning**: {vacancy_details['description'][0]}")
-    #             st.write(f"**Anställningstyp**: {vacancy_details['employment_type'][0]}")
-    #             st.write(f"**Varaktighet**: {vacancy_details['duration'][0]}")
-    #             st.write(f"**Lön**: {vacancy_details['salary_type'][0]}")
-    #             st.write(f"**Omfattning**: {vacancy_details['scope_of_work_min'][0]} - {vacancy_details['scope_of_work_max'][0]}")
-    #             st.write(f"**Webbsida**: {vacancy_details['webpage_url'][0]}")
-    #             st.write(f"**Villkor**: {vacancy_details['description_conditions'][0]}")
-    #             st.write(f"**Erfarenhet som krävs**: {vacancy_details['experience_required'][0]}")
-    #             st.write(f"**Körkort**: {vacancy_details['driver_license'][0]}")
-    #             st.write(f"**Publiceringsdatum**: {vacancy_details['publication_date'][0]}")
-    #             st.write(f"**Sista ansökningsdatum**: {vacancy_details['application_deadline'][0]}")
-    #         else:
-    #             st.warning("Inga detaljer tillgängliga för denna tjänst.")
+        # Använd en beskrivande etikett
+        button_label = f"Visa detaljer för {occupation} hos {employer}"
+        
+        if st.button(button_label, key=index):
+            # Hämta detaljer för det valda jobbet
+            vacancy_details_query = """
+                SELECT
+                    jd.headline,                                 
+                    jd.description,                                         
+
+                    jd.employment_type,
+                    jd.duration,
+                    jd.salary_type,
+                    jd.scope_of_work_min,
+                    jd.scope_of_work_max,    
+                    jd.webpage_url,
+                    jd.description_conditions,                            
+
+                    a.experience_required,
+                    a.driver_license,    
+
+                    m.publication_date,
+                    m.application_deadline
+                FROM refined.fct_job_ads m
+                JOIN refined.dim_auxilliary_attributes a ON m.auxilliary_attributes_id = a.id_aux
+                JOIN refined.dim_job_details jd ON m.job_details_id = jd.job_details_id
+                WHERE m.job_details_id = ?
+            """
+            vacancy_details = con.execute(vacancy_details_query, (job_id,)).fetchdf()
+
+            if not vacancy_details.empty:
+                # ✅ Nu finns headline tillgänglig!
+                st.subheader(vacancy_details['headline'][0])
+                st.write(f"{vacancy_details['description'][0]}")
+                st.write(f"Anställningstyp: {vacancy_details['employment_type'][0]}")
+                st.write(f"Varaktighet: {vacancy_details['duration'][0]}")
+                st.write(f"Lön: {vacancy_details['salary_type'][0]}")
+                st.write(f"Omfattning: {vacancy_details['scope_of_work_min'][0]}–{vacancy_details['scope_of_work_max'][0]}")
+                st.write(f"Webbsida: {vacancy_details['webpage_url'][0]}")
+                st.write(f"Villkor: {vacancy_details['description_conditions'][0]}")
+                st.write(f"Erfarenhet krävs: {vacancy_details['experience_required'][0]}")
+                st.write(f"Körkort: {vacancy_details['driver_license'][0]}")
+                st.write(f"Publiceringsdatum: {vacancy_details['publication_date'][0]}")
+                st.write(f"Sista ansökningsdatum: {vacancy_details['application_deadline'][0]}")
+            else:
+                st.warning("Inga detaljer tillgängliga för denna tjänst.")
 
 
+# SIDEBAR TILL VÄNSTER              -  Välj kommun, fält, yrke + någon extra grej nedanför? Typ allmän statistik i små KPI:er    
+# ANNONSER FÖR MATCHNING I MITTEN   -  Visa specifika annonser baserat på filtreringen
+# STATISTIK TILL HÖGER              -  Visa statistik utifrån filtrering 
+
+# EXTRA - KLICKA TILL PAGE 2        -  Visa karta - klicka och få statistik/annonser
 
