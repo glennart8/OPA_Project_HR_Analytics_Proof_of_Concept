@@ -161,7 +161,7 @@ with col3:
     job_df = load_data(query)
     job_df["Kommun"] = job_df["Kommun"].str.strip().str.title()
 
-    df_stat = pd.merge
+    df_stat = pd.merge(job_df, population_df, on = "Kommon", how="inner")
 
 
     
