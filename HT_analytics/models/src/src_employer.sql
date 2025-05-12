@@ -10,4 +10,6 @@ select
     workplace_address__city as workplace_city,
     workplace_address__country as workplace_country,
     workplace_address__municipality as workplace_municipality,
+    employer__url as employer_url
+
 from stg_employer

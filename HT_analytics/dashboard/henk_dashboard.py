@@ -2,6 +2,8 @@ import pandas as pd
 import duckdb
 import plotly
 import streamlit as st
+from dashboard_common import load_data
+
 
 con = duckdb.connect('../job_ads.duckdb')
 
@@ -9,7 +11,9 @@ con = duckdb.connect('../job_ads.duckdb')
 # 2. Filtrera och visa dessa DYNAMISKT tillsammans med namnet på företaget och org.nummer
 # 3. Eventuell fortsättning: 
 #                           skapa en graf med antalet annonser per kommun och yrkestitel
-#                           På en karta, dynamiskt visa var aretsplatserna ligger        
+#                           På en karta, dynamiskt visa var arbetsplatserna ligger   
+#                           Välj ett alternativ och se mer information om det jobbet        
+
 
 # HÄMTA UNIKA KOMMUNER
 municipalities = con.execute("""
@@ -74,27 +78,71 @@ filtered_jobs = filtered_jobs.drop(columns=["workplace_municipality", "occupatio
 if filtered_jobs.empty:
     st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
 else:
-    st.dataframe(filtered_jobs)
+    st.dataframe(filtered_jobs, hide_index=True)
+    
+    
+##################### CHOOSE A VACANCY ######################
+
+# Om man valt kommun och fält - visa knappar
+if municipality_filter != 'Alla' and occupation_field_filter != 'Alla':
+
+    # Skapa knappar för varje jobbannons
+    for index, row in filtered_jobs.iterrows():
+        job_id = row['job_details_id']  # använder rätt nyckel
+        employer = row['employer_name']
+        occupation = row['occupation']
+        
+        # Använd en beskrivande etikett
+        button_label = f"Visa detaljer för {occupation} hos {employer}"
+        
+        if st.button(button_label, key=index):
+            # Hämta detaljer för det valda jobbet
+            vacancy_details_query = """
+                SELECT
+                    jd.headline,                                 
+                    jd.description,                                         
+
+                    jd.employment_type,
+                    jd.duration,
+                    jd.salary_type,
+                    jd.scope_of_work_min,
+                    jd.scope_of_work_max,    
+                    jd.webpage_url,
+                    jd.description_conditions,                            
+
+                    a.experience_required,
+                    a.driver_license,    
+
+                    m.publication_date,
+                    m.application_deadline
+                FROM refined.fct_job_ads m
+                JOIN refined.dim_auxilliary_attributes a ON m.auxilliary_attributes_id = a.id_aux
+                JOIN refined.dim_job_details jd ON m.job_details_id = jd.job_details_id
+                WHERE m.job_details_id = ?
+            """
+            vacancy_details = con.execute(vacancy_details_query, (job_id,)).fetchdf()
+
+            if not vacancy_details.empty:
+                # ✅ Nu finns headline tillgänglig!
+                st.subheader(vacancy_details['headline'][0])
+                st.write(f"{vacancy_details['description'][0]}")
+                st.write(f"Anställningstyp: {vacancy_details['employment_type'][0]}")
+                st.write(f"Varaktighet: {vacancy_details['duration'][0]}")
+                st.write(f"Lön: {vacancy_details['salary_type'][0]}")
+                st.write(f"Omfattning: {vacancy_details['scope_of_work_min'][0]}–{vacancy_details['scope_of_work_max'][0]}")
+                st.write(f"Webbsida: {vacancy_details['webpage_url'][0]}")
+                st.write(f"Villkor: {vacancy_details['description_conditions'][0]}")
+                st.write(f"Erfarenhet krävs: {vacancy_details['experience_required'][0]}")
+                st.write(f"Körkort: {vacancy_details['driver_license'][0]}")
+                st.write(f"Publiceringsdatum: {vacancy_details['publication_date'][0]}")
+                st.write(f"Sista ansökningsdatum: {vacancy_details['application_deadline'][0]}")
+            else:
+                st.warning("Inga detaljer tillgängliga för denna tjänst.")
 
 
+# SIDEBAR TILL VÄNSTER              -  Välj kommun, fält, yrke + någon extra grej nedanför? Typ allmän statistik i små KPI:er    
+# ANNONSER FÖR MATCHNING I MITTEN   -  Visa specifika annonser baserat på filtreringen
+# STATISTIK TILL HÖGER              -  Visa statistik utifrån filtrering 
 
-### TEST
-
-# test_jobs2 = con.execute("""
-# SELECT 
-#     -- LOWER(e.workplace_municipality) AS workplace_municipality,
-#     -- o.occupation_field,
-#     o.occupation,
-#     e.employer_name,
-#     e.employer_workplace,
-#     m.vacancies
-# FROM refined.fct_job_ads m
-# JOIN refined.dim_employer e ON m.employer_id = e.employer_id
-# JOIN refined.dim_occupation o ON m.occupation_id = o.occupation_id
-# WHERE LOWER(e.workplace_municipality) = ?
-# ORDER BY o.occupation
-# """, (municipality_filter_lower,)).fetchdf()
-
-# st.dataframe(test_jobs2)
-
+# EXTRA - KLICKA TILL PAGE 2        -  Visa karta - klicka och få statistik/annonser
 
