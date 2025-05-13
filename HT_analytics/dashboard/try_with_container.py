@@ -2,33 +2,41 @@ import streamlit as st
 import pandas as pd
 import duckdb
 
-# --- Först, sätt upp sidkonfigurationen ---
+# URLS För bilder
+# bygg - https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
+# pedagogik - https://images.unsplash.com/photo-1580894732444-8ecded7900cd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
+# kultur - https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
+
+import streamlit as st
+import pandas as pd
+import duckdb
+
+# --- SIDKONFIGURATION ---
 st.set_page_config(layout="wide")
 
-# CSS för bakgrund
-st.markdown(
-    f"""
+# --- BAKGRUNDSBILD MED ÖVERLÄGG ---
+st.markdown(f"""
     <style>
     .stApp {{
-        background-image: url("https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
+        background-image:
+            linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
+            url("https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
         background-size: cover;
         background-position: center;
     }}
     </style>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
-# Setup DuckDB-anslutning
+# --- ANSLUTNING TILL DUCKDB ---
 con = duckdb.connect('../job_ads.duckdb')
 
-# --- KONTAINER FÖR FILTRERING ---
-col_filter, _ = st.columns([1, 1])  # col_filter blir bara på 50% av kolumnen
+# --- TOPPCONTAINER: FILTER (vänster) + STATISTIK (höger) ---
+with st.container():
+    col_filter, col_statistik = st.columns([1.5, 1])
 
-with col_filter:
-    with st.container():
+    # --- FILTRERING ---
+    with col_filter:
         st.markdown("### 🔎 Filtrera jobbannonser")
-        
         col_kommun, col_falt, col_yrke = st.columns(3)
 
         with col_kommun:
@@ -56,13 +64,7 @@ with col_filter:
             occupations = ['Alla'] + occupations
             occupation_filter = st.selectbox("Välj yrkeskategori:", occupations)
 
-# --- TVÅ KOLUMNER: Resultat & Statistik ---
-col_resultat, col_statistik = st.columns([1.5, 1])  # [mitten, höger]
-
-# --- MITTEN: JOBBRESULTAT ---
-with col_resultat:
-    st.header("🍹 Lediga jobb")
-
+    # --- HÄMTA FILTRERAD DATA EFTER FILTERNING ---
     query = """
         SELECT *
         FROM marts.mart_vacancies_by_mun_field_occ
@@ -87,13 +89,40 @@ with col_resultat:
     filtered_jobs = con.execute(query, params).fetchdf()
     filtered_jobs_to_show = filtered_jobs.drop(columns=["workplace_municipality", "occupation_field", "job_details_id"])
 
+    # --- STATISTIK ---
+    with col_statistik:
+        st.metric("Antal jobbannonser", len(filtered_jobs))
+
+        if not (municipality_filter != 'Alla' and occupation_field_filter != 'Alla'):
+            if not filtered_jobs.empty:
+                stats_df = (
+                    filtered_jobs
+                    .groupby("occupation_field")
+                    .size()
+                    .reset_index(name="total_vacancies")
+                )
+
+                cols = st.columns(3)
+                symbols = [":hammer:", ":performing_arts:", ":female-teacher:"]
+
+                for col, (index, row), symbol in zip(cols, stats_df.iterrows(), symbols):
+                    with col:
+                        st.metric(label=f"{symbol} {row['occupation_field']}", value=row["total_vacancies"])
+            else:
+                st.info("Ingen statistik tillgänglig för det valda filtret.")
+
+# --- HUVUDKOLUMLAYOUT: RESULTAT (vänster) + YTTERLIGARE STATISTIK (höger) ---
+col_resultat, col_extra_stat = st.columns([1, 1])
+
+# --- VÄNSTER: JOBBRESULTAT ---
+with col_resultat:
+    st.header("🍹 Lediga jobb")
 
     if filtered_jobs.empty:
         st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
     else:
         st.dataframe(filtered_jobs_to_show, hide_index=True)
 
-        # Om man har kryssat i plats och fält ska knappar visas för mer info
         if municipality_filter != 'Alla' and occupation_field_filter != 'Alla':
             for index, row in filtered_jobs.iterrows():
                 job_id = row['job_details_id']
@@ -126,7 +155,7 @@ with col_resultat:
 
                     if not vacancy_details.empty:
                         st.subheader(vacancy_details['headline'][0])
-                        st.write(f"{vacancy_details['description'][0]}")
+                        st.write(vacancy_details['description'][0])
                         st.write(f"Anställningstyp: {vacancy_details['employment_type'][0]}")
                         st.write(f"Varaktighet: {vacancy_details['duration'][0]}")
                         st.write(f"Lön: {vacancy_details['salary_type'][0]}")
@@ -140,27 +169,7 @@ with col_resultat:
                     else:
                         st.warning("Inga detaljer tillgängliga för denna tjänst.")
 
-# --- HÖGER: STATISTIK ---
-with col_statistik:
-    st.header("📊 Statistik")
-    st.metric("Antal jobbannonser", len(filtered_jobs))
-
-    # Kunde tyvärr inte använda vår mart_vac_per_field då den endast selectar allt
-    # Räkna antal annonser per occupation_field i den filtrerade datan
-    if not filtered_jobs.empty:
-        stats_df = (
-            filtered_jobs
-            .groupby("occupation_field") # Grupperar på yrkesfält
-            .size() # Räknar alla rader i varje grupp
-            .reset_index(name="total_vacancies") # Gör det till en DataFrame i stället för en pandas serie - tvunget
-        )
-
-        # Skapar tre kolumner
-        cols = st.columns(3)
-
-        # Iterera över de tre yrkesfälten
-        for col, (_, row) in zip(cols, stats_df.iterrows()): # _ ignorerar index och tar bara själva raden
-            with col:
-                st.metric(label=row["occupation_field"], value=row["total_vacancies"])
-    else:
-        st.info("Ingen statistik tillgänglig för det valda filtret.")
+# --- HÖGER: YTTERLIGARE STATISTIK ---
+with col_extra_stat:
+    st.header("📈 Ytterligare statistik")
+    
