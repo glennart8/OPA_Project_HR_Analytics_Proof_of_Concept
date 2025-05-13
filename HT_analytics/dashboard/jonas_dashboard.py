@@ -7,18 +7,17 @@ import plotly.express as px
 st.set_page_config(layout="wide")
 
 # CSS för bakgrund
-st.markdown(
-    f"""
+st.markdown(f"""
     <style>
     .stApp {{
-        background-image: url("https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
+        background-image:
+            linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
+            url("https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
         background-size: cover;
         background-position: center;
     }}
     </style>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
 # Setup DuckDB-anslutning
 con = duckdb.connect('../job_ads.duckdb')
@@ -231,15 +230,15 @@ with col_statistik:
                 tickfont=dict(size=11, color="white")
             ),
             font=dict(color="white"),
-            plot_bgcolor="rgba(0,0,0,5)",
-            paper_bgcolor="rgba(0,0,0,5)"            
+            plot_bgcolor="rgba(0,0,0,25)",
+            paper_bgcolor="rgba(0,0,0,25)"            
         )
         fig.update_yaxes(categoryorder='total ascending')
         st.plotly_chart(fig, use_container_width=True)
 
         # About-sektion längst ner
         st.markdown("<hr/>", unsafe_allow_html=True)
-        st.markdown("#### Om den här panelen")
+        st.markdown("#### Om")
         st.markdown(
             """
             - Data hämtas från Jobtech API och aggregeras i DuckDB.  
