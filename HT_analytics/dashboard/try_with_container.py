@@ -144,22 +144,23 @@ with col_resultat:
 with col_statistik:
     st.header("📊 Statistik")
     st.metric("Antal jobbannonser", len(filtered_jobs))
-    
-    # Hämta data från mart_vacancies_per_field
-    stats_df = con.execute("""
-        SELECT * FROM marts.mart_vac_per_field
-        ORDER BY total_vacancies DESC
-    """).fetchdf()
 
-    # Skapa 3 kolumner för att visa yrkesfält
-    cols = st.columns(3)
+    # Kunde tyvärr inte använda vår mart_vac_per_field då den endast selectar allt
+    # Räkna antal annonser per occupation_field i den filtrerade datan
+    if not filtered_jobs.empty:
+        stats_df = (
+            filtered_jobs
+            .groupby("occupation_field") # Grupperar på yrkesfält
+            .size() # Räknar alla rader i varje grupp
+            .reset_index(name="total_vacancies") # Gör det till en DataFrame i stället för en pandas serie - tvunget
+        )
 
-    # Vi skapar en tuple med etiketter och värden för de tre första yrkesfälten och antal annonser
-    labels = stats_df['occupation_field'].tolist()  # De tre första yrkesfälten
-    values = stats_df['total_vacancies'].astype(int).tolist()  # Omvandla till heltal för att slippa decimal
+        # Skapar tre kolumner
+        cols = st.columns(3)
 
-    # Iterera och visa värdena i respektive kolumn
-    for col, label, value in zip(cols, labels, values):
-        with col:  # Specificera vilken kolumn vi skriver till
-            st.metric(label=label, value=str(value))
-
+        # Iterera över de tre yrkesfälten
+        for col, (_, row) in zip(cols, stats_df.iterrows()): # _ ignorerar index och tar bara själva raden
+            with col:
+                st.metric(label=row["occupation_field"], value=row["total_vacancies"])
+    else:
+        st.info("Ingen statistik tillgänglig för det valda filtret.")
