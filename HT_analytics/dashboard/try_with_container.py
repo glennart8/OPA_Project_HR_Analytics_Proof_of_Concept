@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import duckdb
+import plotly.express as px
 
 # URLS För bilder
 # bygg - https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
@@ -27,12 +28,21 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
+
 # --- ANSLUTNING TILL DUCKDB ---
 con = duckdb.connect('../job_ads.duckdb')
 
+# --- LÄS IN KOMMUNBEFOLKNING ---
+pop_df = (
+    pd.read_csv("kommun_befolkning_2024.csv")
+      .rename(columns={"Kommun": "workplace_municipality", "Folkmängd": "population"})
+)
+# Gör lowercase för enkel join
+pop_df["workplace_municipality"] = pop_df["workplace_municipality"].str.strip().str.lower()
+
 # --- TOPPCONTAINER: FILTER (vänster) + STATISTIK (höger) ---
 with st.container():
-    col_filter, col_statistik = st.columns([1.5, 1])
+    col_filter, col_statistik = st.columns([1.1, 1])
 
     # --- FILTRERING ---
     with col_filter:
@@ -64,9 +74,10 @@ with st.container():
             occupations = ['Alla'] + occupations
             occupation_filter = st.selectbox("Välj yrkeskategori:", occupations)
 
-    # --- HÄMTA FILTRERAD DATA EFTER FILTERNING ---
+    # --- HÄMTA FILTRERAD DATA EFTER FILTERNING --- 
+        # VAR TVUNGEN ATT HA DISTINCT HÄR, ANNARS KOM DUBLETTER MED
     query = """
-        SELECT *
+        SELECT DISTINCT * 
         FROM marts.mart_vacancies_by_mun_field_occ
         WHERE 1=1
     """
@@ -87,13 +98,19 @@ with st.container():
     query += " ORDER BY occupation"
 
     filtered_jobs = con.execute(query, params).fetchdf()
-    filtered_jobs_to_show = filtered_jobs.drop(columns=["workplace_municipality", "occupation_field", "job_details_id"])
+    
+    filtered_jobs_to_show = (
+        filtered_jobs
+        .drop(columns=["workplace_municipality", "occupation_field", "job_details_id"])
+        .rename(columns={"occupation": "Yrke", "employer_name": "Arb.givare", "vacancies": "Antal tjänster", "employer_organization_number": "Org.Nr"})
+    )
+    
 
-    # --- STATISTIK ---
+    # --- GENERELL STATISTIK ---
     with col_statistik:
         st.metric("Antal jobbannonser", len(filtered_jobs))
 
-        if not (municipality_filter != 'Alla' and occupation_field_filter != 'Alla'):
+        if not (occupation_field_filter != 'Alla'):
             if not filtered_jobs.empty:
                 stats_df = (
                     filtered_jobs
@@ -102,12 +119,14 @@ with st.container():
                     .reset_index(name="total_vacancies")
                 )
 
-                cols = st.columns(3)
+                # Skapa exakt 4 kolumner för jämn layout
+                stat_cols = st.columns(4)
                 symbols = [":hammer:", ":performing_arts:", ":female-teacher:"]
 
-                for col, (index, row), symbol in zip(cols, stats_df.iterrows(), symbols):
+                for col, (index, row), symbol in zip(stat_cols, stats_df.iterrows(), symbols):
                     with col:
                         st.metric(label=f"{symbol} {row['occupation_field']}", value=row["total_vacancies"])
+                        
             else:
                 st.info("Ingen statistik tillgänglig för det valda filtret.")
 
@@ -147,8 +166,8 @@ with col_resultat:
                             m.publication_date,
                             m.application_deadline
                         FROM refined.fct_job_ads m
-                        JOIN refined.dim_auxilliary_attributes a ON m.auxilliary_attributes_id = a.id_aux
-                        JOIN refined.dim_job_details jd ON m.job_details_id = jd.job_details_id
+                        LEFT JOIN refined.dim_auxilliary_attributes a ON m.auxilliary_attributes_id = a.id_aux
+                        LEFT JOIN refined.dim_job_details jd ON m.job_details_id = jd.job_details_id
                         WHERE m.job_details_id = ?
                     """
                     vacancy_details = con.execute(vacancy_details_query, (job_id,)).fetchdf()
@@ -171,5 +190,101 @@ with col_resultat:
 
 # --- HÖGER: YTTERLIGARE STATISTIK ---
 with col_extra_stat:
-    st.header("📈 Ytterligare statistik")
+    st.markdown("## 📊 Statistik")
+
+    # Välj vy: råa antal jobb per yrkeskategori eller jobb per 1 000 invånare
+    mode = st.radio(
+        "Välj vy:",
+        ("Antal jobb per kategori", "Jobb per 1 000 invånare"),
+        index=0,
+        horizontal=True
+    )
+
+    if filtered_jobs.empty:
+        st.info("Ingen data att visa för de valda filtren.")
+    else:
+        if mode == "Antal jobb per kategori":
+            # Gruppar på yrkeskategori i stället för yrkesfält
+            stats_df = (
+                filtered_jobs
+                .groupby("occupation")
+                .size()
+                .reset_index(name="value")
+                .sort_values("value", ascending=False)
+            )
+            x_label, y_label = "Antal jobb", "Yrke"
+            title = "Antal jobb per yrkeskategori"
+            orient = "h"
+
+        else:
+            # Räkna jobb per kommun och justera per 1000 invånare
+            mun_df = (
+                filtered_jobs
+                .groupby("workplace_municipality")
+                .size()
+                .reset_index(name="antal_jobb")
+            )
+            percap = (
+                mun_df
+                .merge(pop_df, on="workplace_municipality", how="left")
+                .assign(value=lambda df: (df["antal_jobb"] * 1000 / df["population"]).round(2))
+                .sort_values("value", ascending=False)
+            )
+            stats_df = percap.rename(columns={"workplace_municipality": "label"})[["label", "value"]]
+            x_label, y_label = "Antal jobb", "Kommun"
+            title = "Jobb per 1 000 invånare"
+            orient = "h"
+
+        # Ta topp 10
+        display_df = stats_df.head(10).sort_values('value', ascending=False).reset_index(drop=True)
+        display_df.columns = [y_label, x_label]
+
+        # Rita horisontellt stapeldiagram med mörkt tema
+        fig = px.bar(
+            display_df,
+            x=x_label,
+            y=y_label,
+            orientation=orient,
+            title=title,
+            labels={y_label: y_label.replace("_", " ").title(), x_label: x_label.replace("_", " ").title()},
+            # template="plotly_dark",
+            height=350
+            ##color= WHAT TO WRITE!!?! Får inte OCCUPATION_FIELD att fungerar korrekt....
+        )
+
+        # Justera stapeltjocklek och mellanrum
+        fig.update_traces(width=0.4)
+        fig.update_layout(
+            bargap=0.0,
+            margin=dict(l=100, r=20, t=50, b=50),
+            xaxis=dict(
+                title_font=dict(size=12, color="white"),
+                tickfont=dict(size=11, color="white"),
+                showgrid=False
+            ),
+            yaxis=dict(
+                title_font=dict(size=12, color="white"),
+                tickfont=dict(size=11, color="white")
+            ),
+            font=dict(color="white"),
+            plot_bgcolor="rgba(30,30,30,0)",
+            paper_bgcolor="rgba(30,30,30,0.5)"        
+        )
+        fig.update_yaxes(categoryorder='total ascending')
+        st.plotly_chart(fig, use_container_width=True)
+
+        # About-sektion längst ner
+        st.markdown("<hr/>", unsafe_allow_html=True)
+        st.markdown("#### Om")
+        st.markdown(
+            """
+            - Data hämtas från Jobtech API och aggregeras i DuckDB.  
+            """
+        )
+
+
+    
+
+
+
     
