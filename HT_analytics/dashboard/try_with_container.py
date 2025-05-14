@@ -42,7 +42,7 @@ pop_df["workplace_municipality"] = pop_df["workplace_municipality"].str.strip().
 
 # --- TOPPCONTAINER: FILTER (vänster) + STATISTIK (höger) ---
 with st.container():
-    col_filter, col_statistik = st.columns([1.1, 1])
+    col_filter, col_statistik = st.columns([1, 1])
 
     # --- FILTRERING ---
     with col_filter:
@@ -108,7 +108,7 @@ with st.container():
 
     # --- GENERELL STATISTIK ---
     with col_statistik:
-        st.metric("Antal jobbannonser", len(filtered_jobs))
+        # st.metric("Antal jobbannonser", len(filtered_jobs))
 
         if not (occupation_field_filter != 'Alla'):
             if not filtered_jobs.empty:
@@ -122,11 +122,15 @@ with st.container():
                 # Skapa exakt 4 kolumner för jämn layout
                 stat_cols = st.columns(4)
                 symbols = [":hammer:", ":performing_arts:", ":female-teacher:"]
+                
+                with stat_cols[0]:
+                    st.metric("Antal jobbannonser", len(filtered_jobs))
 
-                for col, (index, row), symbol in zip(stat_cols, stats_df.iterrows(), symbols):
+                for col, (index, row), symbol in zip(stat_cols[1:], stats_df.iterrows(), symbols):
+                
                     with col:
                         st.metric(label=f"{symbol} {row['occupation_field']}", value=row["total_vacancies"])
-                        
+                
             else:
                 st.info("Ingen statistik tillgänglig för det valda filtret.")
 
