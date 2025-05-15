@@ -15,19 +15,31 @@ import duckdb
 # --- SIDKONFIGURATION ---
 st.set_page_config(layout="wide")
 
-# --- BAKGRUNDSBILD MED ÖVERLÄGG ---
-st.markdown(f"""
+# FÄRGER ATT VÄLJA MELLAN, 
+# ORANGE - #FF8C00, FF7F50, CC5500, FFB347, F7E7CE 
+# BLÅ - 
+
+# --- BAKGRUNDSBILD MED ÖVERLÄGG, TEXTFÄRG ---
+st.markdown("""
     <style>
-    .stApp {{
+    .stApp {
         background-image:
             linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
             url("https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
         background-size: cover;
         background-position: center;
-    }}
+    }
+
+    p, span, div {
+        color: #F7E7CE !important;
+    }
+    
+    /* ÄNDRAR FONT-SIZE PÅ ANTAL JOBB */
+    [data-testid="stMetricValue"] {
+        font-size: 20px;
+    }
     </style>
 """, unsafe_allow_html=True)
-
 
 # --- ANSLUTNING TILL DUCKDB ---
 con = duckdb.connect('../job_ads.duckdb')
@@ -40,7 +52,8 @@ pop_df = (
 # Gör lowercase för enkel join
 pop_df["workplace_municipality"] = pop_df["workplace_municipality"].str.strip().str.lower()
 
-# --- TOPPCONTAINER: FILTER (vänster) + STATISTIK (höger) ---
+#############################    TOP-CONTAINER    ##################################
+
 with st.container():
     col_filter, col_statistik = st.columns([1, 1])
 
@@ -74,7 +87,6 @@ with st.container():
             occupations = ['Alla'] + occupations
             occupation_filter = st.selectbox("Välj yrkeskategori:", occupations)
             
-        query_for_llm = st.text_input("", placeholder="Berätta vad du söker")
 
     # --- HÄMTA FILTRERAD DATA EFTER FILTERNING --- 
         # VAR TVUNGEN ATT HA DISTINCT HÄR, ANNARS KOM DUBLETTER MED
@@ -124,17 +136,21 @@ with st.container():
                 stat_cols = st.columns(4)
                 symbols = [":hammer:", ":performing_arts:", ":female-teacher:"]
                 
+                
                 with stat_cols[0]:
+                    st.write("")
                     st.metric("Antal jobbannonser", len(filtered_jobs))
 
                 for col, (index, row), symbol in zip(stat_cols[1:], stats_df.iterrows(), symbols):
-                
+                    
                     with col:
+                        st.write("")
                         st.metric(label=f"{symbol} {row['occupation_field']}", value=row["total_vacancies"])
                 
             else:
                 st.info("Ingen statistik tillgänglig för det valda filtret.")
 
+#############################    RESULTAT    ##################################
 
 # --- HUVUDKOLUMLAYOUT: RESULTAT (vänster) + YTTERLIGARE STATISTIK (höger) ---
 col_resultat, col_extra_stat = st.columns([1, 1])
@@ -146,7 +162,9 @@ with col_resultat:
     if filtered_jobs.empty:
         st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
     else:
-        st.dataframe(filtered_jobs_to_show, hide_index=True)
+        # st.dataframe(filtered_jobs_to_show, hide_index=True)
+        styled_df = filtered_jobs_to_show.style.set_properties(**{'color': '#FFC87C'}) # #FFB347, 
+        st.dataframe(styled_df, hide_index=True)
 
         if municipality_filter != 'Alla' and occupation_field_filter != 'Alla':
             for index, row in filtered_jobs.iterrows():
@@ -194,14 +212,15 @@ with col_resultat:
                     else:
                         st.warning("Inga detaljer tillgängliga för denna tjänst.")
 
-# --- HÖGER: YTTERLIGARE STATISTIK ---
+#############################    STATISTIK    ##################################
+
 with col_extra_stat:
     st.markdown("## 📊 Statistik")
 
     # Välj vy: råa antal jobb per yrkeskategori eller jobb per 1 000 invånare
     mode = st.radio(
         "Välj vy:",
-        ("Antal jobb per kategori", "Jobb per 1 000 invånare"),
+        ("Antal jobb per kategori", "Jobb per 1 000 invånare", "Linus stuff"),
         index=0,
         horizontal=True
     )
@@ -213,15 +232,23 @@ with col_extra_stat:
             # Gruppar på yrkeskategori i stället för yrkesfält
             stats_df = (
                 filtered_jobs
-                .groupby("occupation")
+                .groupby(["occupation", "occupation_field"]) # TA MED occupation_field här för att kunna filtrera på färg i "baren"
                 .size()
                 .reset_index(name="value")
                 .sort_values("value", ascending=False)
             )
+            
+            # Topp 10 yrkeskategorier 
+            top_occupations = stats_df.groupby("occupation")["value"].sum().nlargest(10).index
+            
+            # Filtrera stats_df för att bara ha topp 10 occupations
+            display_df = stats_df[stats_df["occupation"].isin(top_occupations)].reset_index(drop=True)
+            
             x_label, y_label = "Antal jobb", "Yrke"
             title = "Antal jobb per yrkeskategori"
             orient = "h"
 
+        # Här får vi göra en elif för per invånare och en elif för linus grejer
         else:
             # Räkna jobb per kommun och justera per 1000 invånare
             mun_df = (
@@ -241,22 +268,18 @@ with col_extra_stat:
             title = "Jobb per 1 000 invånare"
             orient = "h"
 
-        # Ta topp 10
-        display_df = stats_df.head(10).sort_values('value', ascending=False).reset_index(drop=True)
-        display_df.columns = [y_label, x_label]
-
         # Rita horisontellt stapeldiagram med mörkt tema
         fig = px.bar(
             display_df,
-            x=x_label,
-            y=y_label,
+            x="value",
+            y="occupation",
+            color="occupation_field",
             orientation=orient,
             title=title,
-            labels={y_label: y_label.replace("_", " ").title(), x_label: x_label.replace("_", " ").title()},
-            # template="plotly_dark",
-            height=350
-            ##color= WHAT TO WRITE!!?! Får inte OCCUPATION_FIELD att fungerar korrekt....
-        )
+            labels={"occupation": y_label, "value": x_label, "occupation_field": "Arbetsfält"},
+            height=350,
+            color_discrete_sequence=px.colors.qualitative.Set1  # Tyckte den va snyggast :) Feel free o ändra!
+    )
 
         # Justera stapeltjocklek och mellanrum
         fig.update_traces(width=0.4)
@@ -279,6 +302,18 @@ with col_extra_stat:
         fig.update_yaxes(categoryorder='total ascending')
         st.plotly_chart(fig, use_container_width=True)
 
+############################# ABOUT #############################
+
+        # About-sektion längst ner
+        st.markdown("<hr/>", unsafe_allow_html=True)
+        st.markdown("#### Om")
+        st.markdown(
+            """
+            - Data hämtas från Jobtech API och aggregeras i DuckDB.  
+            - By: Henke, Jonas, Linus
+            """
+        )
+
         # About-sektion längst ner
         st.markdown("<hr/>", unsafe_allow_html=True)
         st.markdown("#### Om")
@@ -287,6 +322,17 @@ with col_extra_stat:
             - Data hämtas från Jobtech API och aggregeras i DuckDB.  
             """
         )
+
+#############################    LLM    ##################################
+with st.container():
+    with col_filter:
+        query_for_llm = st.text_input("", placeholder="Berätta vad du söker")
+        
+with col_resultat:
+    # Göm gammal dataframe
+    # Skapa en ny utifrån LLM tillbakaskickade SQL-kod
+    st.write("Blablabla")
+    
 
 
     
