@@ -216,7 +216,6 @@ with col_statistik:
         )
 
         # Justera stapeltjocklek och mellanrum
-        fig.update_traces(width=0.4)
         fig.update_layout(
             bargap=0.0,
             margin=dict(l=100, r=20, t=50, b=50),
@@ -230,8 +229,10 @@ with col_statistik:
                 tickfont=dict(size=11, color="white")
             ),
             font=dict(color="white"),
-            plot_bgcolor="rgba(0,0,0,25)",
-            paper_bgcolor="rgba(0,0,0,25)"            
+
+            # <-- här korrigerar du bakgrunden -->
+            plot_bgcolor="#0e1117",
+            paper_bgcolor="#0e1117"
         )
         fig.update_yaxes(categoryorder='total ascending')
         st.plotly_chart(fig, use_container_width=True)
