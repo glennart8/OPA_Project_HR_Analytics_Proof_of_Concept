@@ -73,6 +73,8 @@ with st.container():
             """, (occupation_field_filter,)).fetchdf()['occupation'].dropna().sort_values().tolist()
             occupations = ['Alla'] + occupations
             occupation_filter = st.selectbox("Välj yrkeskategori:", occupations)
+            
+        query_for_llm = st.text_input("", placeholder="Berätta vad du söker")
 
     # --- HÄMTA FILTRERAD DATA EFTER FILTERNING --- 
         # VAR TVUNGEN ATT HA DISTINCT HÄR, ANNARS KOM DUBLETTER MED
@@ -108,7 +110,6 @@ with st.container():
 
     # --- GENERELL STATISTIK ---
     with col_statistik:
-        # st.metric("Antal jobbannonser", len(filtered_jobs))
 
         if not (occupation_field_filter != 'Alla'):
             if not filtered_jobs.empty:
@@ -133,6 +134,7 @@ with st.container():
                 
             else:
                 st.info("Ingen statistik tillgänglig för det valda filtret.")
+
 
 # --- HUVUDKOLUMLAYOUT: RESULTAT (vänster) + YTTERLIGARE STATISTIK (höger) ---
 col_resultat, col_extra_stat = st.columns([1, 1])
