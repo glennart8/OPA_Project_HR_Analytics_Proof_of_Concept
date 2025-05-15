@@ -2,15 +2,13 @@ import streamlit as st
 import pandas as pd
 import duckdb
 import plotly.express as px
+from llm import get_answer, get_sql_code
 
 # URLS För bilder
 # bygg - https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
 # pedagogik - https://images.unsplash.com/photo-1580894732444-8ecded7900cd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
 # kultur - https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
 
-import streamlit as st
-import pandas as pd
-import duckdb
 
 # --- SIDKONFIGURATION ---
 st.set_page_config(layout="wide")
@@ -87,7 +85,18 @@ with st.container():
             occupations = ['Alla'] + occupations
             occupation_filter = st.selectbox("Välj yrkeskategori:", occupations)
             
+######################## LLM ##############################            
+          
+          
+        query_for_llm = st.text_input("", placeholder="Berätta vad du söker")
 
+        if query_for_llm:
+            st.write(get_sql_code(query_for_llm))
+            # Ersätta resultats-dataframen med arbeten som matchar det som skrivit in (översatt i sql-kod)
+            # AI behöver tillgång till ALLT i vår databas (eller bara fact och dims?)
+            # Var defineras AI:ns kontext?
+                    
+                        
     # --- HÄMTA FILTRERAD DATA EFTER FILTERNING --- 
         # VAR TVUNGEN ATT HA DISTINCT HÄR, ANNARS KOM DUBLETTER MED
     query = """
@@ -232,24 +241,25 @@ with col_extra_stat:
             # Gruppar på yrkeskategori i stället för yrkesfält
             stats_df = (
                 filtered_jobs
-                .groupby(["occupation", "occupation_field"]) # TA MED occupation_field här för att kunna filtrera på färg i "baren"
+                .groupby(["occupation", "occupation_field"])  # Färg på occupation_field
                 .size()
                 .reset_index(name="value")
                 .sort_values("value", ascending=False)
             )
-            
+
             # Topp 10 yrkeskategorier 
             top_occupations = stats_df.groupby("occupation")["value"].sum().nlargest(10).index
-            
+
             # Filtrera stats_df för att bara ha topp 10 occupations
-            display_df = stats_df[stats_df["occupation"].isin(top_occupations)].reset_index(drop=True)
-            
+            df_to_plot = stats_df[stats_df["occupation"].isin(top_occupations)].reset_index(drop=True)
+
             x_label, y_label = "Antal jobb", "Yrke"
             title = "Antal jobb per yrkeskategori"
             orient = "h"
+            color_col = "occupation_field"
+            labels = {"occupation": y_label, "value": x_label, "occupation_field": "Arbetsfält"}
 
-        # Här får vi göra en elif för per invånare och en elif för linus grejer
-        else:
+        elif mode == "Jobb per 1 000 invånare":
             # Räkna jobb per kommun och justera per 1000 invånare
             mun_df = (
                 filtered_jobs
@@ -263,44 +273,53 @@ with col_extra_stat:
                 .assign(value=lambda df: (df["antal_jobb"] * 1000 / df["population"]).round(2))
                 .sort_values("value", ascending=False)
             )
-            stats_df = percap.rename(columns={"workplace_municipality": "label"})[["label", "value"]]
-            x_label, y_label = "Antal jobb", "Kommun"
+            stats_df = percap.rename(columns={"workplace_municipality": "label"})[["label", "value"]].head(10)
+
+            df_to_plot = stats_df
+            x_label, y_label = "Jobb per 1 000 invånare", "Kommun"
             title = "Jobb per 1 000 invånare"
             orient = "h"
+            color_col = None
+            labels = {"label": y_label, "value": x_label}
 
-        # Rita horisontellt stapeldiagram med mörkt tema
-        fig = px.bar(
-            display_df,
-            x="value",
-            y="occupation",
-            color="occupation_field",
-            orientation=orient,
-            title=title,
-            labels={"occupation": y_label, "value": x_label, "occupation_field": "Arbetsfält"},
-            height=350,
-            color_discrete_sequence=px.colors.qualitative.Set1  # Tyckte den va snyggast :) Feel free o ändra!
-    )
+        elif mode == "Linus stuff":
+            pass
 
-        # Justera stapeltjocklek och mellanrum
-        fig.update_traces(width=0.4)
-        fig.update_layout(
-            bargap=0.0,
-            margin=dict(l=100, r=20, t=50, b=50),
-            xaxis=dict(
-                title_font=dict(size=12, color="white"),
-                tickfont=dict(size=11, color="white"),
-                showgrid=False
-            ),
-            yaxis=dict(
-                title_font=dict(size=12, color="white"),
-                tickfont=dict(size=11, color="white")
-            ),
-            font=dict(color="white"),
-            plot_bgcolor="rgba(30,30,30,0)",
-            paper_bgcolor="rgba(30,30,30,0.5)"        
-        )
-        fig.update_yaxes(categoryorder='total ascending')
-        st.plotly_chart(fig, use_container_width=True)
+        if not df_to_plot.empty:
+            # Rita horisontellt stapeldiagram med mörkt tema
+            fig = px.bar(
+                df_to_plot,
+                x="value",
+                y=df_to_plot.columns[0],  # label-kolumnen: 'occupation' eller 'label'
+                color=color_col if color_col else None,
+                orientation=orient,
+                title=title,
+                labels=labels,
+                height=350,
+                color_discrete_sequence=px.colors.qualitative.Set1
+            )
+
+            # Justera stapeltjocklek och mellanrum
+            fig.update_traces(width=0.4)
+            fig.update_layout(
+                bargap=0.0,
+                margin=dict(l=100, r=20, t=50, b=50),
+                xaxis=dict(
+                    title_font=dict(size=12, color="white"),
+                    tickfont=dict(size=11, color="white"),
+                    showgrid=False
+                ),
+                yaxis=dict(
+                    title_font=dict(size=12, color="white"),
+                    tickfont=dict(size=11, color="white")
+                ),
+                font=dict(color="white"),
+                plot_bgcolor="rgba(30,30,30,0)",
+                paper_bgcolor="rgba(30,30,30,0.5)"        
+            )
+            fig.update_yaxes(categoryorder='total ascending')
+            st.plotly_chart(fig, use_container_width=True)
+
 
 ############################# ABOUT #############################
 
@@ -324,16 +343,8 @@ with col_extra_stat:
         )
 
 #############################    LLM    ##################################
-with st.container():
-    with col_filter:
-        query_for_llm = st.text_input("", placeholder="Berätta vad du söker")
-        
-with col_resultat:
-    # Göm gammal dataframe
-    # Skapa en ny utifrån LLM tillbakaskickade SQL-kod
-    st.write("Blablabla")
-    
 
+launch_llm()
 
     
 
