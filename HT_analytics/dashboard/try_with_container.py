@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import duckdb
 import plotly.express as px
-from llm import get_answer, get_sql_code
+from llm import get_answer, get_sql_code, get_results
 
 # URLS För bilder
 # bygg - https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
@@ -85,16 +85,6 @@ with st.container():
             occupations = ['Alla'] + occupations
             occupation_filter = st.selectbox("Välj yrkeskategori:", occupations)
             
-######################## LLM ##############################            
-          
-          
-        query_for_llm = st.text_input("", placeholder="Berätta vad du söker")
-
-        if query_for_llm:
-            st.write(get_sql_code(query_for_llm))
-            # Ersätta resultats-dataframen med arbeten som matchar det som skrivit in (översatt i sql-kod)
-            # AI behöver tillgång till ALLT i vår databas (eller bara fact och dims?)
-            # Var defineras AI:ns kontext?
                     
                         
     # --- HÄMTA FILTRERAD DATA EFTER FILTERNING --- 
@@ -166,60 +156,77 @@ col_resultat, col_extra_stat = st.columns([1, 1])
 
 # --- VÄNSTER: JOBBRESULTAT ---
 with col_resultat:
+    
     st.header("🍹 Lediga jobb")
 
-    if filtered_jobs.empty:
-        st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
+    # Om man skrivit in något i sökfältet
+         
+    query_for_llm = st.text_input("", placeholder="Berätta vad du söker")
+
+    if query_for_llm:
+        # st.write(get_sql_code(query_for_llm))
+        
+        llm_answer = get_sql_code(query_for_llm)
+        st.write(llm_answer)
+        
+        query_from_llm = get_results(llm_answer)
+        
+        st.dataframe(query_from_llm)
+        
+
     else:
-        # st.dataframe(filtered_jobs_to_show, hide_index=True)
-        styled_df = filtered_jobs_to_show.style.set_properties(**{'color': '#FFC87C'}) # #FFB347, 
-        st.dataframe(styled_df, hide_index=True)
+        if filtered_jobs.empty:
+            st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
+        else:
+            # st.dataframe(filtered_jobs_to_show, hide_index=True)
+            styled_df = filtered_jobs_to_show.style.set_properties(**{'color': '#FFC87C'}) # #FFB347, 
+            st.dataframe(styled_df, hide_index=True)
 
-        if municipality_filter != 'Alla' and occupation_field_filter != 'Alla':
-            for index, row in filtered_jobs.iterrows():
-                job_id = row['job_details_id']
-                employer = row['employer_name']
-                occupation = row['occupation']
-                button_label = f"Visa info för {occupation} hos {employer}"
+            if municipality_filter != 'Alla' and occupation_field_filter != 'Alla':
+                for index, row in filtered_jobs.iterrows():
+                    job_id = row['job_details_id']
+                    employer = row['employer_name']
+                    occupation = row['occupation']
+                    button_label = f"Visa info för {occupation} hos {employer}"
 
-                if st.button(button_label, key=index):
-                    vacancy_details_query = """
-                        SELECT
-                            jd.headline,                                 
-                            jd.description,
-                            jd.employment_type,
-                            jd.duration,
-                            jd.salary_type,
-                            jd.scope_of_work_min,
-                            jd.scope_of_work_max,    
-                            jd.webpage_url,
-                            jd.description_conditions,
-                            a.experience_required,
-                            a.driver_license,
-                            m.publication_date,
-                            m.application_deadline
-                        FROM refined.fct_job_ads m
-                        LEFT JOIN refined.dim_auxilliary_attributes a ON m.auxilliary_attributes_id = a.id_aux
-                        LEFT JOIN refined.dim_job_details jd ON m.job_details_id = jd.job_details_id
-                        WHERE m.job_details_id = ?
-                    """
-                    vacancy_details = con.execute(vacancy_details_query, (job_id,)).fetchdf()
+                    if st.button(button_label, key=index):
+                        vacancy_details_query = """
+                            SELECT
+                                jd.headline,                                 
+                                jd.description,
+                                jd.employment_type,
+                                jd.duration,
+                                jd.salary_type,
+                                jd.scope_of_work_min,
+                                jd.scope_of_work_max,    
+                                jd.webpage_url,
+                                jd.description_conditions,
+                                a.experience_required,
+                                a.driver_license,
+                                m.publication_date,
+                                m.application_deadline
+                            FROM refined.fct_job_ads m
+                            LEFT JOIN refined.dim_auxilliary_attributes a ON m.auxilliary_attributes_id = a.id_aux
+                            LEFT JOIN refined.dim_job_details jd ON m.job_details_id = jd.job_details_id
+                            WHERE m.job_details_id = ?
+                        """
+                        vacancy_details = con.execute(vacancy_details_query, (job_id,)).fetchdf()
 
-                    if not vacancy_details.empty:
-                        st.subheader(vacancy_details['headline'][0])
-                        st.write(vacancy_details['description'][0])
-                        st.write(f"Anställningstyp: {vacancy_details['employment_type'][0]}")
-                        st.write(f"Varaktighet: {vacancy_details['duration'][0]}")
-                        st.write(f"Lön: {vacancy_details['salary_type'][0]}")
-                        st.write(f"Omfattning: {vacancy_details['scope_of_work_min'][0]}–{vacancy_details['scope_of_work_max'][0]}")
-                        st.write(f"Webbsida: {vacancy_details['webpage_url'][0]}")
-                        st.write(f"Villkor: {vacancy_details['description_conditions'][0]}")
-                        st.write(f"Erfarenhet krävs: {vacancy_details['experience_required'][0]}")
-                        st.write(f"Körkort: {vacancy_details['driver_license'][0]}")
-                        st.write(f"Publiceringsdatum: {vacancy_details['publication_date'][0]}")
-                        st.write(f"Sista ansökningsdatum: {vacancy_details['application_deadline'][0]}")
-                    else:
-                        st.warning("Inga detaljer tillgängliga för denna tjänst.")
+                        if not vacancy_details.empty:
+                            st.subheader(vacancy_details['headline'][0])
+                            st.write(vacancy_details['description'][0])
+                            st.write(f"Anställningstyp: {vacancy_details['employment_type'][0]}")
+                            st.write(f"Varaktighet: {vacancy_details['duration'][0]}")
+                            st.write(f"Lön: {vacancy_details['salary_type'][0]}")
+                            st.write(f"Omfattning: {vacancy_details['scope_of_work_min'][0]}–{vacancy_details['scope_of_work_max'][0]}")
+                            st.write(f"Webbsida: {vacancy_details['webpage_url'][0]}")
+                            st.write(f"Villkor: {vacancy_details['description_conditions'][0]}")
+                            st.write(f"Erfarenhet krävs: {vacancy_details['experience_required'][0]}")
+                            st.write(f"Körkort: {vacancy_details['driver_license'][0]}")
+                            st.write(f"Publiceringsdatum: {vacancy_details['publication_date'][0]}")
+                            st.write(f"Sista ansökningsdatum: {vacancy_details['application_deadline'][0]}")
+                        else:
+                            st.warning("Inga detaljer tillgängliga för denna tjänst.")
 
 #############################    STATISTIK    ##################################
 
@@ -333,18 +340,9 @@ with col_extra_stat:
             """
         )
 
-        # About-sektion längst ner
-        st.markdown("<hr/>", unsafe_allow_html=True)
-        st.markdown("#### Om")
-        st.markdown(
-            """
-            - Data hämtas från Jobtech API och aggregeras i DuckDB.  
-            """
-        )
-
 #############################    LLM    ##################################
 
-launch_llm()
+
 
     
 
