@@ -91,7 +91,11 @@ with st.container():
         query_for_llm = st.text_input("", placeholder="Berätta vad du söker")
 
         if query_for_llm:
-            st.write(get_sql_code(query_for_llm))
+            # st.write(get_sql_code(query_for_llm))
+            
+            answer = get_sql_code(query_for_llm)
+            st.write(answer)
+            
             # Ersätta resultats-dataframen med arbeten som matchar det som skrivit in (översatt i sql-kod)
             # AI behöver tillgång till ALLT i vår databas (eller bara fact och dims?)
             # Var defineras AI:ns kontext?
@@ -344,7 +348,7 @@ with col_extra_stat:
 
 #############################    LLM    ##################################
 
-launch_llm()
+
 
     
 
