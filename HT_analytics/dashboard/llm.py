@@ -1,6 +1,8 @@
 from dotenv import load_dotenv
 import os
 import google.generativeai as genai
+import duckdb
+import streamlit as st
 
 # i content ska vi skicka in den text som användaren skrivit
 # någonstans ska vi definera att ai ska översätta detta till sql-kod som passar just våran databas med alla namn osv
@@ -45,5 +47,8 @@ def get_sql_code(query: str):
     response = model.generate_content(prompt)
     return response.text
     
-
+def get_results(query):
+    con = duckdb.connect('job_ads.duckdb')
+    query_df = con.execute(query).df()
+    return query_df
     
