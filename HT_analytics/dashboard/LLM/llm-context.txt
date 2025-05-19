@@ -8,6 +8,7 @@ Resultatet ska alltid innehålla följande kolumner:
 - employer_name
 - vacancies
 - employer_organization_number
+- job_details_id
 
 Alla fält finns i tabeller som materialiseras via dbt som views i `job_ads.duckdb`.
 
@@ -24,7 +25,7 @@ Innehåller: `occupation_id`, `job_details_id`, `employer_id`, `vacancies`, `pub
 Innehåller: `employer_id`, `employer_name`, `employer_workplace`, `workplace_municipality`, `workplace_region`, ...
 
 **dim_job_details**  
-Innehåller: `job_details_id`, `headline`, `description`, `employment_type`, `scope_of_work_min`, `scope_of_work_max`, `salary_type`, ...
+Innehåller: `job_details_id`, `headline`, `description`, `employment_type`, `scope_of_work_min`, `scope_of_work_max`, `salary_type`, `webpage_url` ...
 
 **dim_occupation**  
 Innehåller: `occupation_id`, `occupation`, `occupation_group`, `occupation_field`
