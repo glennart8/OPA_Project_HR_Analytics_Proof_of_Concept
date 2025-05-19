@@ -171,9 +171,15 @@ with col_resultat:
         st.write(llm_answer)
         
         query_from_llm = get_results(llm_answer)
-        st.dataframe(query_from_llm)
         
-
+        if query_from_llm.empty:
+            st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
+        else:
+            st.dataframe(query_from_llm)
+        
+        # Visa knappar för arbeten (Ska vi ha något filter för att inte visa alla???)
+        
+          
     else:
         if filtered_jobs.empty:
             st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
