@@ -1,7 +1,7 @@
 WITH job_details as (SELECT * FROM {{ref ('src_job_details')}})
 
 select
-    {{ dbt_utils.generate_surrogate_key(['id'])}} as job_details_id,
+    {{ dbt_utils.generate_surrogate_key(['id'])}} as job_details_id, -- Här finns ett ID, då ska inga dubletter finnas
     headline,
     description, 
     description_html_formatted,
@@ -14,3 +14,8 @@ select
     coalesce(description_conditions, 'Ej specificerat') as description_conditions
 
 from job_details
+
+-- BRYT UT TILL 2 DIM_MODELS:
+-- dim_job_details_text
+-- dim_job_details_conditions
+-- kom ihåg att ändra joins i fct osv
