@@ -19,7 +19,6 @@ genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-2.0-flash"
                               )
         
-
     # PROBLEM 1 - Gemeni er oss markdown-syntax ``` och dessa behöver ta bort så att koden kann läsas in ordentligt
     # PROBLEM 2 - DO (som i dim_occupation är ett reserverat ord och behöver bytas ut - skriv in i kontexten så att llm unviker DO
     # PROBLEM 3 - {{ JINJASYNTAX }} kan inte läsas 
@@ -29,7 +28,7 @@ model = genai.GenerativeModel("gemini-2.0-flash"
     # FIXAD     - där ingen erfarenhet krävs ger LLM %Ej krav% - behöver specificera såna grejer i kontexten
     # FIXAD     - driver_licence required och access_to_own_car funkar inte
     # FIXAD     - jd.employment_type = 'Vanlig anstÃ¤llning', funkar inte att köra encoding = 'utf8'
-    #           - Samma encoding fel om man söker på "fast lön"
+    # FIXAD     - Samma encoding fel om man söker på "fast lön"
     # FIXAD     - Kan inte visa deltid då den söker på employment_type i stället för description_conditions 
                 
     
