@@ -19,9 +19,6 @@ api_key = os.getenv("API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-2.0-flash"
                               )
-def get_answer(question):
-    response = model.generate_content()
-    return response.text   
         
 
     # PROBLEM 1 - Gemeni er oss markdown-syntax ``` och dessa behöver ta bort så att koden kann läsas in ordentligt
@@ -32,11 +29,15 @@ def get_answer(question):
     # PROBLEM 6 - Hittar inte vissa saker, t.ex. 
     #           - där ingen erfarenhet krävs ger LLM %Ej krav% - behöver specificera såna grejer i kontexten
     #           - visa lediga jobb i uddevalla inom bygg och betong - AND occ.occupation_group ILIKE '%Bygg och betong%'
-    #           - 
+    #           - driver_licence required och access_to_own_car funkar inte
+    #           - jd.employment_type = 'Vanlig anstÃ¤llning', funkar inte att köra encoding = 'utf8'
+    #           - Samma encoding fel om man söker på "fast lön"
+    #           - Kan inte visa deltid då den söker på employment_type i stället för description_conditions
                 
     
 def get_sql_code(query: str):
-    with open("llm-context.txt", "r") as file:
+
+    with open("LLM/llm-context.txt", "r") as file:
         context_text = file.read()
 
     # Kanske borde lägga in en if-sats eller nåt som gör att context_text endast läses in första gången och inte kommande sökningar
@@ -68,7 +69,7 @@ def get_sql_code(query: str):
     return clean_sql
     
 def get_results(query):    
-    con = duckdb.connect('../job_ads.duckdb')
+    con = duckdb.connect('../../job_ads.duckdb')
     query_df = con.execute(query).df()
     return query_df
     

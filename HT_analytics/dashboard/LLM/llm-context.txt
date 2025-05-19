@@ -71,4 +71,17 @@ where
 Undvik att använda do som alias, eftersom det är ett SQL-reservord. Använd istället occ eller docc.
 Använd inte {{ ref(...) }}. Använd istället direkta tabellnamn som fct_job_ads, dim_employer, etc.
 Använd alltid fullständiga tabellnamn med schema, t.ex. refined.fct_job_ads, refined.dim_occupation, refined.dim_auxilliary_attributes,refinded.dim_employer, refined.dim_job_details
-experience_required är en boolean, true or false.
+experience_required, driver_licence och access_to_own_car är en booleaner.
+När användaren fråga om "jobb inom" ett område, använd dig av occ.occupation_field
+Använd ILIKE i stället för =
+- Använd alltid SELECT DISTINCT om JOINs förekommer.
+- Tänk på att fct_job_ads kan innehålla flera rader per jobbannons.
+- Använd dim_job_details för att få unika jobbannonser via job_details_id.
+
+- Använd alltid **LEFT JOIN** när du kopplar samman faktatabellen (`refined.fct_job_ads`) med dimensionstabellerna (`refined.dim_employer`, `refined.dim_occupation`, `refined.dim_job_details`, `refined.dim_auxilliary_attributes`) för att säkerställa att alla jobbannonser inkluderas, även om någon dimension saknas.
+- Koppla alltid dim-tabeller med motsvarande id i fxt_job_ads, t.ex. aux_id i dim, till auxilliary_attributes_id i fct
+
+dim_job_details:
+                employment_type innehåller: 'Vanlig anställning', 'Behovsanställning', 'Sommarjobb / feriejobb', 'Arbete utomlands'
+                salary_type innehåller: 'Fast månads- vecko- eller timlön', 'Fast och rörlig lön' och 'Rörlig ackords- eller provisionslön'
+                **description_conditions för att hitta: 'Heltid Anställningstid enligt överenskommelse', 'Heltid/ Ej specificerat', 'Deltid/ Ej specificerat', 'Deltid Anställningstid enligt överenskommelse'
