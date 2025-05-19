@@ -9,7 +9,10 @@ def _get_ads(url_for_search, params):
     headers = {"accept": "application/json"}
     response = requests.get(url_for_search, headers=headers, params=params)
     response.raise_for_status()  # check for http errors
-    return json.loads(response.content.decode("utf8"))
+    
+    response.encoding = "utf-8"
+    
+    return response.json()
 
 # Deklarerar en DLT-resource som strömmar jobbannonser från API:t och lägger till dem i pipelinen utan att skriva över tidigare data
 @dlt.resource(write_disposition="append")
