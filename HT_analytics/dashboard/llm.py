@@ -23,9 +23,18 @@ def get_answer(question):
     response = model.generate_content()
     return response.text   
         
+
+    # PROBLEM 1 - Gemeni er oss markdown-syntax ``` och dessa behöver ta bort så att koden kann läsas in ordentligt
+    # PROBLEM 2 - DO (som i dim_occupation är ett reserverat ord och behöver bytas ut - skriv in i kontexten så att llm unviker DO
+    # PROBLEM 3 - {{ JINJASYNTAX }} kan inte läsas 
+    # PROBLEM 4 - hittar inte fct_job_ads (inte specificerat refined tror jag)
+    # PROBLEM 5 - vi skapar en ny job_ads.duckdb och connetar inte till den rätta - därför hittas inte tabellerna
+    # PROBLEM 6 - Hittar inte vissa saker, t.ex. 
+    #           - där ingen erfarenhet krävs ger LLM %Ej krav% - behöver specificera såna grejer i kontexten
+    #           - visa lediga jobb i uddevalla inom bygg och betong - AND occ.occupation_group ILIKE '%Bygg och betong%'
+    #           - 
+                
     
-
-
 def get_sql_code(query: str):
     with open("llm-context.txt", "r") as file:
         context_text = file.read()
@@ -33,6 +42,12 @@ def get_sql_code(query: str):
     # Kanske borde lägga in en if-sats eller nåt som gör att context_text endast läses in första gången och inte kommande sökningar
     prompt = f"""
             Du är en SQL-expert som hjälper till att hitta relevanta jobbannonser.
+            Skriv en komplett SQL-fråga som kan köras direkt i DuckDB.
+            Använd alltid schema-namn, t.ex. refined.fct_job_ads.
+            Använd inga Jinja-kommandon som {{ ref('...') }}.
+            Undvik alias som är SQL-reserverade ord, t.ex. 'do'.
+            Använd alias som occ, fja, de, jd.
+            Returnera endast SQL-frågan, ingen förklaring.
 
             ## Kontext:
             {context_text}
@@ -45,10 +60,15 @@ def get_sql_code(query: str):
             """
 
     response = model.generate_content(prompt)
-    return response.text
+    raw_sql = response.text
+
+    # Tar bort markdown-klamrar
+    clean_sql = raw_sql.strip().removeprefix("```sql").removesuffix("```").strip()
+
+    return clean_sql
     
-def get_results(query):
-    con = duckdb.connect('job_ads.duckdb')
+def get_results(query):    
+    con = duckdb.connect('../job_ads.duckdb')
     query_df = con.execute(query).df()
     return query_df
     
