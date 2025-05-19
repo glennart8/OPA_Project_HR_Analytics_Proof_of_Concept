@@ -64,3 +64,11 @@ join {{ ref('dim_occupation') }} as do on fja.occupation_id = do.occupation_id
 where 
     jd.employment_type = 'Heltid'
     and de.workplace_municipality ilike '%Malmö%'
+
+---
+Övrig viktig info
+
+Undvik att använda do som alias, eftersom det är ett SQL-reservord. Använd istället occ eller docc.
+Använd inte {{ ref(...) }}. Använd istället direkta tabellnamn som fct_job_ads, dim_employer, etc.
+Använd alltid fullständiga tabellnamn med schema, t.ex. refined.fct_job_ads, refined.dim_occupation, refined.dim_auxilliary_attributes,refinded.dim_employer, refined.dim_job_details
+experience_required är en boolean, true or false.
