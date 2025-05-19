@@ -81,7 +81,9 @@ Använd ILIKE i stället för =
 - Använd alltid **LEFT JOIN** när du kopplar samman faktatabellen (`refined.fct_job_ads`) med dimensionstabellerna (`refined.dim_employer`, `refined.dim_occupation`, `refined.dim_job_details`, `refined.dim_auxilliary_attributes`) för att säkerställa att alla jobbannonser inkluderas, även om någon dimension saknas.
 - Koppla alltid dim-tabeller med motsvarande id i fxt_job_ads, t.ex. aux_id i dim, till auxilliary_attributes_id i fct
 
+- När användaren skriver in deltid eller heltid, gå via description_conditions
+
 dim_job_details:
                 employment_type innehåller: 'Vanlig anställning', 'Behovsanställning', 'Sommarjobb / feriejobb', 'Arbete utomlands'
                 salary_type innehåller: 'Fast månads- vecko- eller timlön', 'Fast och rörlig lön' och 'Rörlig ackords- eller provisionslön'
-                **description_conditions för att hitta: 'Heltid Anställningstid enligt överenskommelse', 'Heltid/ Ej specificerat', 'Deltid/ Ej specificerat', 'Deltid Anställningstid enligt överenskommelse'
+                description_conditions för att hitta: 'Heltid Anställningstid enligt överenskommelse', 'Heltid/ Ej specificerat', 'Deltid/ Ej specificerat', 'Deltid Anställningstid enligt överenskommelse'

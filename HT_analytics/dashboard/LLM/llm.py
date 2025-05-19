@@ -2,7 +2,6 @@ from dotenv import load_dotenv
 import os
 import google.generativeai as genai
 import duckdb
-import streamlit as st
 
 # i content ska vi skicka in den text som användaren skrivit
 # någonstans ska vi definera att ai ska översätta detta till sql-kod som passar just våran databas med alla namn osv
@@ -27,12 +26,11 @@ model = genai.GenerativeModel("gemini-2.0-flash"
     # PROBLEM 4 - hittar inte fct_job_ads (inte specificerat refined tror jag)
     # PROBLEM 5 - vi skapar en ny job_ads.duckdb och connetar inte till den rätta - därför hittas inte tabellerna
     # PROBLEM 6 - Hittar inte vissa saker, t.ex. 
-    #           - där ingen erfarenhet krävs ger LLM %Ej krav% - behöver specificera såna grejer i kontexten
-    #           - visa lediga jobb i uddevalla inom bygg och betong - AND occ.occupation_group ILIKE '%Bygg och betong%'
-    #           - driver_licence required och access_to_own_car funkar inte
-    #           - jd.employment_type = 'Vanlig anstÃ¤llning', funkar inte att köra encoding = 'utf8'
+    # FIXAD     - där ingen erfarenhet krävs ger LLM %Ej krav% - behöver specificera såna grejer i kontexten
+    # FIXAD     - driver_licence required och access_to_own_car funkar inte
+    # FIXAD     - jd.employment_type = 'Vanlig anstÃ¤llning', funkar inte att köra encoding = 'utf8'
     #           - Samma encoding fel om man söker på "fast lön"
-    #           - Kan inte visa deltid då den söker på employment_type i stället för description_conditions
+    # FIXAD     - Kan inte visa deltid då den söker på employment_type i stället för description_conditions 
                 
     
 def get_sql_code(query: str):
@@ -69,7 +67,7 @@ def get_sql_code(query: str):
     return clean_sql
     
 def get_results(query):    
-    con = duckdb.connect('../../job_ads.duckdb')
+    con = duckdb.connect('../job_ads.duckdb')
     query_df = con.execute(query).df()
     return query_df
     
