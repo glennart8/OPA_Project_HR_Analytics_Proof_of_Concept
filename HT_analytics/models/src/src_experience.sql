@@ -1,10 +1,8 @@
-WITH stg_experience AS (
-    SELECT * FROM {{ source('job_ads__must_have__skills', 'stg_ads') }}
+WITH stg_job_experience AS (
+    SELECT * FROM {{ source('job_ads', 'stg_experience') }}
 ),
 
 select
     _dlt_parent_id AS experience_id,
     label AS skill_label
-    
-    FROM stg_experience
-
+from stg_job_experience

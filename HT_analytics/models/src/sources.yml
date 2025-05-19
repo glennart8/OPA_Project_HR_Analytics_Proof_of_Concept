@@ -4,3 +4,5 @@ sources:
     tables:
       - name: stg_ads # smeknamn
         identifier: job_ads # namnet i databasen
+      - name: stg_experience # smeknamn
+        identifier: job_ads__must_have__skills # namnet i databasen
