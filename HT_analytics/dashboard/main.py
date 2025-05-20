@@ -5,6 +5,7 @@ from LLM.llm import get_sql_code, get_results
 from dashboard_common import show_buttons, get_connection
 from styles import load_background_style
 from results import ask_gemeni, show_filtered_jobs
+from about import show_about_text
 
 # --- SIDKONFIGURATION ---
 st.set_page_config(layout="wide")
@@ -232,26 +233,6 @@ with col_extra_stat:
             )
             fig.update_yaxes(categoryorder='total ascending')
             st.plotly_chart(fig, use_container_width=True)
-
-
-############################# ABOUT #############################
-
-        # About-sektion längst ner
-        st.markdown("<hr/>", unsafe_allow_html=True)
-        st.markdown("#### Om")
-        st.markdown(
-            """
-            - Data hämtas från Jobtech API och aggregeras i DuckDB.  
-            - By: Henke, Jonas, Linus
-            """
-        )
-
-#############################    LLM    ##################################
-
-
-
-    
-
-
-
-    
+        
+        # --- ABOUT ---    
+        show_about_text()
