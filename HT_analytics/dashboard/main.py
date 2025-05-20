@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
-import duckdb
 import plotly.express as px
-import os
 from LLM.llm import get_sql_code, get_results
 from dashboard_common import show_buttons, get_connection
 from styles import load_background_style
+from results import ask_gemeni, show_filtered_jobs
 
 # --- SIDKONFIGURATION ---
 st.set_page_config(layout="wide")
@@ -123,42 +122,18 @@ with st.container():
 
 #############################    RESULTAT    ##################################
 
-# --- HUVUDKOLUMLAYOUT: RESULTAT (vänster) + YTTERLIGARE STATISTIK (höger) ---
+# --- HUVUDKOLUMLAYOUT ---
 col_resultat, col_extra_stat = st.columns([1, 1])
 
-# --- VÄNSTER: JOBBRESULTAT ---
 with col_resultat:
-    
     st.header("🍹 Lediga jobb")
-
     query_for_llm = st.text_input(" ", placeholder="Berätta vad du söker", label_visibility="collapsed")
     
-    # Om vi skriver till LLM
-    if query_for_llm:      
-        sql_code_from_llm = get_sql_code(query_for_llm)
-        st.write(sql_code_from_llm)
-        result_from_llm = get_results(sql_code_from_llm)
-        
-        if result_from_llm.empty:
-            st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
-        else:
-            st.dataframe(result_from_llm)
-            # Visa knappar för arbeten (Ska vi ha något filter för att inte visa alla???)
-            # FUNKAR DÅLIGT HÄR, VISAR VISSA TEXTER MEN INTE ANDRA
-            show_buttons(result_from_llm)
-    
-    # Om vi filtrerar via dropdown-menyerna     
+    if query_for_llm:
+        ask_gemeni(query_for_llm)
     else:
-        if filtered_jobs.empty:
-            st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
-        else:
-            styled_df = filtered_jobs_to_show.style.set_properties(**{'color': '#FFC87C'}) # #FFB347, 
-            st.dataframe(styled_df, hide_index=True)
-
-            # Om vi valt de 2 första filtren
-            if municipality_filter != 'Alla' and occupation_field_filter != 'Alla':
-                show_buttons(filtered_jobs)
-
+        show_filtered_jobs(filtered_jobs, filtered_jobs_to_show, municipality_filter, occupation_field_filter)    
+    
 #############################    STATISTIK    ##################################
 
 with col_extra_stat:
