@@ -5,6 +5,7 @@ from styles import load_background_style
 from results import ask_gemeni, show_filtered_jobs
 from statistics import show_statistics
 from about import show_about_text
+from general_statistics import show_general_statistics
 
 # --- SIDKONFIGURATION ---
 st.set_page_config(layout="wide")
@@ -92,31 +93,10 @@ with st.container():
     
     # --- GENERELL STATISTIK ---
     with col_statistik:
-
+        
         if not (occupation_field_filter != 'Alla'):
             if not filtered_jobs.empty:
-                stats_df = (
-                    filtered_jobs
-                    .groupby("occupation_field")
-                    .size()
-                    .reset_index(name="total_vacancies")
-                )
-
-                # Skapa exakt 4 kolumner för jämn layout
-                stat_cols = st.columns(4)
-                symbols = [":hammer:", ":performing_arts:", ":female-teacher:"]
-                
-                
-                with stat_cols[0]:
-                    st.write("")
-                    st.metric("Antal jobbannonser", len(filtered_jobs))
-
-                for col, (index, row), symbol in zip(stat_cols[1:], stats_df.iterrows(), symbols):
-                    
-                    with col:
-                        st.write("")
-                        st.metric(label=f"{symbol} {row['occupation_field']}", value=row["total_vacancies"])
-                
+                show_general_statistics(filtered_jobs)
             else:
                 st.info("Ingen statistik tillgänglig för det valda filtret.")
 
