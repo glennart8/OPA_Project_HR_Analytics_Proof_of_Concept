@@ -4,39 +4,17 @@ import duckdb
 import plotly.express as px
 import os
 from LLM.llm import get_sql_code, get_results
-
+from dashboard_common import show_buttons, get_connection
+from styles import load_background_style
 
 # --- SIDKONFIGURATION ---
 st.set_page_config(layout="wide")
 
-# FÄRGER ATT VÄLJA MELLAN, 
-# ORANGE - #FF8C00, FF7F50, CC5500, FFB347, F7E7CE 
-# BLÅ - 
-
-# --- BAKGRUNDSBILD MED ÖVERLÄGG, TEXTFÄRG ---
-st.markdown("""
-    <style>
-    .stApp {
-        background-image:
-            linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
-            url("https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
-        background-size: cover;
-        background-position: center;
-    }
-
-    p, span, div {
-        color: #F7E7CE !important;
-    }
-    
-    /* ÄNDRAR FONT-SIZE PÅ ANTAL JOBB */
-    [data-testid="stMetricValue"] {
-        font-size: 20px;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# --- LADDA IN BAKGRUNDSBILD MED ÖVERLÄGG, TEXTFÄRG ---
+st.markdown(load_background_style(), unsafe_allow_html=True)
 
 # --- ANSLUTNING TILL DUCKDB ---
-con = duckdb.connect('../job_ads.duckdb')
+con = get_connection()
 
 # --- LÄS IN KOMMUNBEFOLKNING ---
 pop_df = (
@@ -45,6 +23,7 @@ pop_df = (
 )
 # Gör lowercase för enkel join
 pop_df["workplace_municipality"] = pop_df["workplace_municipality"].str.strip().str.lower()
+
 
 #############################    TOP-CONTAINER    ##################################
 
@@ -80,9 +59,7 @@ with st.container():
             """, (occupation_field_filter,)).fetchdf()['occupation'].dropna().sort_values().tolist()
             occupations = ['Alla'] + occupations
             occupation_filter = st.selectbox("Välj yrkeskategori:", occupations)
-            
-                    
-                        
+                           
     # --- HÄMTA FILTRERAD DATA EFTER FILTERNING --- 
         # VAR TVUNGEN ATT HA DISTINCT HÄR, ANNARS KOM DUBLETTER MED
     query = """
@@ -114,7 +91,6 @@ with st.container():
         .rename(columns={"occupation": "Yrke", "employer_name": "Arb.givare", "vacancies": "Antal tjänster", "employer_organization_number": "Org.Nr"})
     )
     
-
     # --- GENERELL STATISTIK ---
     with col_statistik:
 
@@ -155,79 +131,33 @@ with col_resultat:
     
     st.header("🍹 Lediga jobb")
 
-    # Om man skrivit in något i sökfältet
-         
     query_for_llm = st.text_input(" ", placeholder="Berätta vad du söker", label_visibility="collapsed")
-
-    if query_for_llm:
-        # st.write(get_sql_code(query_for_llm))
+    
+    # Om vi skriver till LLM
+    if query_for_llm:      
+        sql_code_from_llm = get_sql_code(query_for_llm)
+        st.write(sql_code_from_llm)
+        result_from_llm = get_results(sql_code_from_llm)
         
-        llm_answer = get_sql_code(query_for_llm)
-        st.write(llm_answer)
-        
-        query_from_llm = get_results(llm_answer)
-        
-        if query_from_llm.empty:
+        if result_from_llm.empty:
             st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
         else:
-            st.dataframe(query_from_llm)
-        
-        # Visa knappar för arbeten (Ska vi ha något filter för att inte visa alla???)
-        
-          
+            st.dataframe(result_from_llm)
+            # Visa knappar för arbeten (Ska vi ha något filter för att inte visa alla???)
+            # FUNKAR DÅLIGT HÄR, VISAR VISSA TEXTER MEN INTE ANDRA
+            show_buttons(result_from_llm)
+    
+    # Om vi filtrerar via dropdown-menyerna     
     else:
         if filtered_jobs.empty:
             st.warning("Tyvärr finns det inga tjänster ute inom detta område.")
         else:
-            # st.dataframe(filtered_jobs_to_show, hide_index=True)
             styled_df = filtered_jobs_to_show.style.set_properties(**{'color': '#FFC87C'}) # #FFB347, 
             st.dataframe(styled_df, hide_index=True)
 
+            # Om vi valt de 2 första filtren
             if municipality_filter != 'Alla' and occupation_field_filter != 'Alla':
-                for index, row in filtered_jobs.iterrows():
-                    job_id = row['job_details_id']
-                    employer = row['employer_name']
-                    occupation = row['occupation']
-                    button_label = f"Visa info för {occupation} hos {employer}"
-
-                    if st.button(button_label, key=index):
-                        vacancy_details_query = """
-                            SELECT
-                                jd.headline,                                 
-                                jd.description,
-                                jd.employment_type,
-                                jd.duration,
-                                jd.salary_type,
-                                jd.scope_of_work_min,
-                                jd.scope_of_work_max,    
-                                jd.webpage_url,
-                                jd.description_conditions,
-                                a.experience_required,
-                                a.driver_license,
-                                m.publication_date,
-                                m.application_deadline
-                            FROM refined.fct_job_ads m
-                            LEFT JOIN refined.dim_auxilliary_attributes a ON m.auxilliary_attributes_id = a.id_aux
-                            LEFT JOIN refined.dim_job_details jd ON m.job_details_id = jd.job_details_id
-                            WHERE m.job_details_id = ?
-                        """
-                        vacancy_details = con.execute(vacancy_details_query, (job_id,)).fetchdf()
-
-                        if not vacancy_details.empty:
-                            st.subheader(vacancy_details['headline'][0])
-                            st.write(vacancy_details['description'][0])
-                            st.write(f"Anställningstyp: {vacancy_details['employment_type'][0]}")
-                            st.write(f"Varaktighet: {vacancy_details['duration'][0]}")
-                            st.write(f"Lön: {vacancy_details['salary_type'][0]}")
-                            st.write(f"Omfattning: {vacancy_details['scope_of_work_min'][0]}–{vacancy_details['scope_of_work_max'][0]}")
-                            st.write(f"Webbsida: {vacancy_details['webpage_url'][0]}")
-                            st.write(f"Villkor: {vacancy_details['description_conditions'][0]}")
-                            st.write(f"Erfarenhet krävs: {vacancy_details['experience_required'][0]}")
-                            st.write(f"Körkort: {vacancy_details['driver_license'][0]}")
-                            st.write(f"Publiceringsdatum: {vacancy_details['publication_date'][0]}")
-                            st.write(f"Sista ansökningsdatum: {vacancy_details['application_deadline'][0]}")
-                        else:
-                            st.warning("Inga detaljer tillgängliga för denna tjänst.")
+                show_buttons(filtered_jobs)
 
 #############################    STATISTIK    ##################################
 
