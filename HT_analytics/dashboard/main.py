@@ -6,6 +6,7 @@ import os
 from LLM.llm import get_sql_code, get_results
 from dashboard_common import show_buttons, get_connection
 from styles import load_background_style
+from statistics import show_statistics
 
 # --- SIDKONFIGURATION ---
 st.set_page_config(layout="wide")
@@ -19,10 +20,12 @@ con = get_connection()
 # --- LÄS IN KOMMUNBEFOLKNING ---
 pop_df = (
     pd.read_csv("kommun_befolkning_2024.csv")
-      .rename(columns={"Kommun": "workplace_municipality", "Folkmängd": "population"})
+    .rename(columns={"Kommun": "workplace_municipality", "Folkmängd": "population"})
 )
-# Gör lowercase för enkel join
+# Gör lowercase för att joina 
 pop_df["workplace_municipality"] = pop_df["workplace_municipality"].str.strip().str.lower()
+
+
 
 
 #############################    TOP-CONTAINER    ##################################
@@ -159,104 +162,106 @@ with col_resultat:
             if municipality_filter != 'Alla' and occupation_field_filter != 'Alla':
                 show_buttons(filtered_jobs)
 
-#############################    STATISTIK    ##################################
+# #############################    STATISTIK    ##################################
 
-with col_extra_stat:
-    st.markdown("## 📊 Statistik")
+    with col_extra_stat:  
+        show_statistics(filtered_jobs, pop_df)
 
-    # Välj vy: råa antal jobb per yrkeskategori eller jobb per 1 000 invånare
-    mode = st.radio(
-        "Välj vy:",
-        ("Antal jobb per kategori", "Jobb per 1 000 invånare", "Linus stuff"),
-        index=0,
-        horizontal=True
-    )
+#     st.markdown("## 📊 Statistik")
 
-    if filtered_jobs.empty:
-        st.info("Ingen data att visa för de valda filtren.")
-    else:
-        if mode == "Antal jobb per kategori":
-            # Gruppar på yrkeskategori i stället för yrkesfält
-            stats_df = (
-                filtered_jobs
-                .groupby(["occupation", "occupation_field"])  # Färg på occupation_field
-                .size()
-                .reset_index(name="value")
-                .sort_values("value", ascending=False)
-            )
+#     # Välj vy: råa antal jobb per yrkeskategori eller jobb per 1 000 invånare
+#     mode = st.radio(
+#         "Välj vy:",
+#         ("Antal jobb per kategori", "Jobb per 1 000 invånare", "Linus stuff"),
+#         index=0,
+#         horizontal=True
+#     )
 
-            # Topp 10 yrkeskategorier 
-            top_occupations = stats_df.groupby("occupation")["value"].sum().nlargest(10).index
+#     if filtered_jobs.empty:
+#         st.info("Ingen data att visa för de valda filtren.")
+#     else:
+#         if mode == "Antal jobb per kategori":
+#             # Gruppar på yrkeskategori i stället för yrkesfält
+#             stats_df = (
+#                 filtered_jobs
+#                 .groupby(["occupation", "occupation_field"])  # Färg på occupation_field
+#                 .size()
+#                 .reset_index(name="value")
+#                 .sort_values("value", ascending=False)
+#             )
 
-            # Filtrera stats_df för att bara ha topp 10 occupations
-            df_to_plot = stats_df[stats_df["occupation"].isin(top_occupations)].reset_index(drop=True)
+#             # Topp 10 yrkeskategorier 
+#             top_occupations = stats_df.groupby("occupation")["value"].sum().nlargest(10).index
 
-            x_label, y_label = "Antal jobb", "Yrke"
-            title = "Antal jobb per yrkeskategori"
-            orient = "h"
-            color_col = "occupation_field"
-            labels = {"occupation": y_label, "value": x_label, "occupation_field": "Arbetsfält"}
+#             # Filtrera stats_df för att bara ha topp 10 occupations
+#             df_to_plot = stats_df[stats_df["occupation"].isin(top_occupations)].reset_index(drop=True)
 
-        elif mode == "Jobb per 1 000 invånare":
-            # Räkna jobb per kommun och justera per 1000 invånare
-            mun_df = (
-                filtered_jobs
-                .groupby("workplace_municipality")
-                .size()
-                .reset_index(name="antal_jobb")
-            )
-            percap = (
-                mun_df
-                .merge(pop_df, on="workplace_municipality", how="left")
-                .assign(value=lambda df: (df["antal_jobb"] * 1000 / df["population"]).round(2))
-                .sort_values("value", ascending=False)
-            )
-            stats_df = percap.rename(columns={"workplace_municipality": "label"})[["label", "value"]].head(10)
+#             x_label, y_label = "Antal jobb", "Yrke"
+#             title = "Antal jobb per yrkeskategori"
+#             orient = "h"
+#             color_col = "occupation_field"
+#             labels = {"occupation": y_label, "value": x_label, "occupation_field": "Arbetsfält"}
 
-            df_to_plot = stats_df
-            x_label, y_label = "Jobb per 1 000 invånare", "Kommun"
-            title = "Jobb per 1 000 invånare"
-            orient = "h"
-            color_col = None
-            labels = {"label": y_label, "value": x_label}
+#         elif mode == "Jobb per 1 000 invånare":
+#             # Räkna jobb per kommun och justera per 1000 invånare
+#             mun_df = (
+#                 filtered_jobs
+#                 .groupby("workplace_municipality")
+#                 .size()
+#                 .reset_index(name="antal_jobb")
+#             )
+#             percap = (
+#                 mun_df
+#                 .merge(pop_df, on="workplace_municipality", how="left")
+#                 .assign(value=lambda df: (df["antal_jobb"] * 1000 / df["population"]).round(2))
+#                 .sort_values("value", ascending=False)
+#             )
+#             stats_df = percap.rename(columns={"workplace_municipality": "label"})[["label", "value"]].head(10)
 
-        elif mode == "Linus stuff":
-            pass
+#             df_to_plot = stats_df
+#             x_label, y_label = "Jobb per 1 000 invånare", "Kommun"
+#             title = "Jobb per 1 000 invånare"
+#             orient = "h"
+#             color_col = None
+#             labels = {"label": y_label, "value": x_label}
 
-        if not df_to_plot.empty:
-            # Rita horisontellt stapeldiagram med mörkt tema
-            fig = px.bar(
-                df_to_plot,
-                x="value",
-                y=df_to_plot.columns[0],  # label-kolumnen: 'occupation' eller 'label'
-                color=color_col if color_col else None,
-                orientation=orient,
-                title=title,
-                labels=labels,
-                height=350,
-                color_discrete_sequence=px.colors.qualitative.Set1
-            )
+#         elif mode == "Linus stuff":
+#             pass
 
-            # Justera stapeltjocklek och mellanrum
-            fig.update_traces(width=0.4)
-            fig.update_layout(
-                bargap=0.0,
-                margin=dict(l=100, r=20, t=50, b=50),
-                xaxis=dict(
-                    title_font=dict(size=12, color="white"),
-                    tickfont=dict(size=11, color="white"),
-                    showgrid=False
-                ),
-                yaxis=dict(
-                    title_font=dict(size=12, color="white"),
-                    tickfont=dict(size=11, color="white")
-                ),
-                font=dict(color="white"),
-                plot_bgcolor="rgba(30,30,30,0)",
-                paper_bgcolor="rgba(30,30,30,0.5)"        
-            )
-            fig.update_yaxes(categoryorder='total ascending')
-            st.plotly_chart(fig, use_container_width=True)
+#         if not df_to_plot.empty:
+#             # Rita horisontellt stapeldiagram med mörkt tema
+#             fig = px.bar(
+#                 df_to_plot,
+#                 x="value",
+#                 y=df_to_plot.columns[0],  # label-kolumnen: 'occupation' eller 'label'
+#                 color=color_col if color_col else None,
+#                 orientation=orient,
+#                 title=title,
+#                 labels=labels,
+#                 height=350,
+#                 color_discrete_sequence=px.colors.qualitative.Set1
+#             )
+
+#             # Justera stapeltjocklek och mellanrum
+#             fig.update_traces(width=0.4)
+#             fig.update_layout(
+#                 bargap=0.0,
+#                 margin=dict(l=100, r=20, t=50, b=50),
+#                 xaxis=dict(
+#                     title_font=dict(size=12, color="white"),
+#                     tickfont=dict(size=11, color="white"),
+#                     showgrid=False
+#                 ),
+#                 yaxis=dict(
+#                     title_font=dict(size=12, color="white"),
+#                     tickfont=dict(size=11, color="white")
+#                 ),
+#                 font=dict(color="white"),
+#                 plot_bgcolor="rgba(30,30,30,0)",
+#                 paper_bgcolor="rgba(30,30,30,0.5)"        
+#             )
+#             fig.update_yaxes(categoryorder='total ascending')
+#             st.plotly_chart(fig, use_container_width=True)
 
 
 ############################# ABOUT #############################
