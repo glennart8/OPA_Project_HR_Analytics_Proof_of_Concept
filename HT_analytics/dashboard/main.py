@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-from LLM.llm import get_sql_code, get_results
-from dashboard_common import show_buttons, get_connection
+from dashboard_common import get_connection
 from styles import load_background_style
 from results import ask_gemeni, show_filtered_jobs
 from statistics import show_statistics
+from about import show_about_text
 
 # --- SIDKONFIGURATION ---
 st.set_page_config(layout="wide")
@@ -23,8 +22,6 @@ pop_df = (
 )
 # Gör lowercase för att joina 
 pop_df["workplace_municipality"] = pop_df["workplace_municipality"].str.strip().str.lower()
-
-
 
 
 #############################    TOP-CONTAINER    ##################################
@@ -142,120 +139,9 @@ with col_resultat:
     with col_extra_stat:  
         show_statistics(filtered_jobs, pop_df)
 
-#     st.markdown("## 📊 Statistik")
-
-#     # Välj vy: råa antal jobb per yrkeskategori eller jobb per 1 000 invånare
-#     mode = st.radio(
-#         "Välj vy:",
-#         ("Antal jobb per kategori", "Jobb per 1 000 invånare", "Linus stuff"),
-#         index=0,
-#         horizontal=True
-#     )
-
-#     if filtered_jobs.empty:
-#         st.info("Ingen data att visa för de valda filtren.")
-#     else:
-#         if mode == "Antal jobb per kategori":
-#             # Gruppar på yrkeskategori i stället för yrkesfält
-#             stats_df = (
-#                 filtered_jobs
-#                 .groupby(["occupation", "occupation_field"])  # Färg på occupation_field
-#                 .size()
-#                 .reset_index(name="value")
-#                 .sort_values("value", ascending=False)
-#             )
-
-#             # Topp 10 yrkeskategorier 
-#             top_occupations = stats_df.groupby("occupation")["value"].sum().nlargest(10).index
-
-#             # Filtrera stats_df för att bara ha topp 10 occupations
-#             df_to_plot = stats_df[stats_df["occupation"].isin(top_occupations)].reset_index(drop=True)
-
-#             x_label, y_label = "Antal jobb", "Yrke"
-#             title = "Antal jobb per yrkeskategori"
-#             orient = "h"
-#             color_col = "occupation_field"
-#             labels = {"occupation": y_label, "value": x_label, "occupation_field": "Arbetsfält"}
-
-#         elif mode == "Jobb per 1 000 invånare":
-#             # Räkna jobb per kommun och justera per 1000 invånare
-#             mun_df = (
-#                 filtered_jobs
-#                 .groupby("workplace_municipality")
-#                 .size()
-#                 .reset_index(name="antal_jobb")
-#             )
-#             percap = (
-#                 mun_df
-#                 .merge(pop_df, on="workplace_municipality", how="left")
-#                 .assign(value=lambda df: (df["antal_jobb"] * 1000 / df["population"]).round(2))
-#                 .sort_values("value", ascending=False)
-#             )
-#             stats_df = percap.rename(columns={"workplace_municipality": "label"})[["label", "value"]].head(10)
-
-#             df_to_plot = stats_df
-#             x_label, y_label = "Jobb per 1 000 invånare", "Kommun"
-#             title = "Jobb per 1 000 invånare"
-#             orient = "h"
-#             color_col = None
-#             labels = {"label": y_label, "value": x_label}
-
-#         elif mode == "Linus stuff":
-#             pass
-
-#         if not df_to_plot.empty:
-#             # Rita horisontellt stapeldiagram med mörkt tema
-#             fig = px.bar(
-#                 df_to_plot,
-#                 x="value",
-#                 y=df_to_plot.columns[0],  # label-kolumnen: 'occupation' eller 'label'
-#                 color=color_col if color_col else None,
-#                 orientation=orient,
-#                 title=title,
-#                 labels=labels,
-#                 height=350,
-#                 color_discrete_sequence=px.colors.qualitative.Set1
-#             )
-
-#             # Justera stapeltjocklek och mellanrum
-#             fig.update_traces(width=0.4)
-#             fig.update_layout(
-#                 bargap=0.0,
-#                 margin=dict(l=100, r=20, t=50, b=50),
-#                 xaxis=dict(
-#                     title_font=dict(size=12, color="white"),
-#                     tickfont=dict(size=11, color="white"),
-#                     showgrid=False
-#                 ),
-#                 yaxis=dict(
-#                     title_font=dict(size=12, color="white"),
-#                     tickfont=dict(size=11, color="white")
-#                 ),
-#                 font=dict(color="white"),
-#                 plot_bgcolor="rgba(30,30,30,0)",
-#                 paper_bgcolor="rgba(30,30,30,0.5)"        
-#             )
-#             fig.update_yaxes(categoryorder='total ascending')
-#             st.plotly_chart(fig, use_container_width=True)
-
-
 ############################# ABOUT #############################
+        show_about_text()
 
-        # About-sektion längst ner
-        st.markdown("<hr/>", unsafe_allow_html=True)
-        st.markdown("#### Om")
-        st.markdown(
-            """
-            - Data hämtas från Jobtech API och aggregeras i DuckDB.  
-            - By: Henke, Jonas, Linus
-            """
-        )
-
-#############################    LLM    ##################################
-
-
-
-    
 
 
 
