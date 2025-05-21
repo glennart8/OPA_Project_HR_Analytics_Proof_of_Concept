@@ -83,8 +83,9 @@ Använd ILIKE i stället för =
 - Koppla alltid dim-tabeller med motsvarande id i fxt_job_ads, t.ex. aux_id i dim, till auxilliary_attributes_id i fct
 
 - När användaren skriver in deltid eller heltid, gå via description_conditions
-- Använd "ILIKE %fotografi%" i 'occupation' när användaren skriver t.ex. "visa jobb inom fotografi"
-- Använd "ILIKE %fotografi%" i 'headline' när användaren skriver t.ex. "visa jobb som innefattar fotografi"
+
+Om frågan innehåller "jobb inom", filtrera på occupation_field, occupation eller headline(ILIKE).
+Om frågan innehåller "jobb som", filtrera på occupation, headline eller discription (ILIKE).
 
 dim_job_details:
                 employment_type innehåller: 'Vanlig anställning', 'Behovsanställning', 'Sommarjobb / feriejobb', 'Arbete utomlands'
