@@ -64,3 +64,5 @@ def show_statistics(filtered_jobs, pop_df):
         margin=dict(l=100, r=20, t=50, b=50),
     )
     st.plotly_chart(fig, use_container_width=True)
+    
+    return df_to_plot, mode
