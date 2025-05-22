@@ -3,6 +3,7 @@ import streamlit as st
 from streamlit_folium import folium_static
 import json
 import numpy as np
+import pandas as pd
 
 def show_map_per_capita(full_percap: "pd.DataFrame"):
 
