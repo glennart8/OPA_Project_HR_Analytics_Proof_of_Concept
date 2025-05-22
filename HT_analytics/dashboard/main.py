@@ -8,6 +8,7 @@ from statistics import show_statistics
 from about import show_about_text
 from general_statistics import show_general_statistics
 from top_container import filter_jobs, get_jobs, show_jobs
+from map_per_capita import show_map
 
 # -----------
 #   STYLING
@@ -66,5 +67,9 @@ with col_resultat:
     
 # Statistik och OM-text
 with col_extra_stat:  
-    show_statistics(filtered_jobs, pop_df)
     show_about_text()
+    
+    df_to_plot, mode = show_statistics(filtered_jobs, pop_df)
+    
+    if mode == "Jobb per 1 000 invånare":
+        show_map(df_to_plot)
