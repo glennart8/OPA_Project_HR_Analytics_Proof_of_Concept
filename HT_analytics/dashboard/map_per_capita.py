@@ -4,7 +4,7 @@ from streamlit_folium import folium_static
 import json
 import numpy as np
 
-def show_map(df_to_plot):
+def show_map_per_capita(df_to_plot):
 
     # Ladda GeoJSON
     with open("data/swedish_municipalities.geojson.txt", "r", encoding="utf-8") as f:
