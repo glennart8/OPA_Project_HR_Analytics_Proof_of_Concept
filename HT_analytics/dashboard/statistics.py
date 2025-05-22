@@ -1,5 +1,29 @@
 import streamlit as st
 import plotly.express as px
+import pandas as pd
+
+
+def per_capita_df(filtered_jobs: pd.DataFrame, pop_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Returnerar en DataFrame med kolumnerna:
+    - label (kommun)
+    - value (jobb per 1000 invånare)
+    för ALLA kommuner.
+    """
+    mun_df = (
+        filtered_jobs
+        .groupby("workplace_municipality")
+        .size()
+        .reset_index(name="antal_jobb")
+    )
+    full = (
+        pop_df.rename(columns={"workplace_municipality":"label"})
+              .merge(mun_df, left_on="label", right_on="workplace_municipality", how="left")
+              .fillna({"antal_jobb": 0})
+              .assign(value=lambda d: (d["antal_jobb"] * 1000 / d["population"]).round(2))
+              .loc[:, ["label", "value"]]
+    )
+    return full
 
 def show_statistics(filtered_jobs, pop_df):
     st.markdown("## 📊 Statistik")
