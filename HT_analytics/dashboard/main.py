@@ -40,7 +40,6 @@ with st.container():
         municipality_filter, occupation_field_filter, occupation_filter = filter_jobs()
         query, params = get_jobs(municipality_filter, occupation_field_filter, occupation_filter)
         filtered_jobs, filtered_jobs_to_show = show_jobs(query, params)
-        # filtered_jobs, filtered_jobs_to_show = get_jobs(municipality_filter, occupation_field_filter, occupation_filter)
     
     # Generell statistik
     with col_statistik:
