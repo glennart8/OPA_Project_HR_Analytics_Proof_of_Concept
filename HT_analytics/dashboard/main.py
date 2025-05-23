@@ -6,7 +6,7 @@ import pandas as pd
 from dashboard_common import get_connection
 from styles import load_background_style
 from results import ask_gemeni, show_filtered_jobs
-from statistics import show_statistics, per_capita_df
+from statistics import per_capita_df, build_fig, show_radiobuttons 
 from about import show_about_text
 from general_statistics import show_general_statistics
 from top_container import filter_jobs, get_jobs, show_jobs
@@ -72,9 +72,8 @@ with col_resultat:
     
 # Statistik och OM-text
 with col_extra_stat:  
+    st.markdown("## 📊 Statistik")
+    
+    show_radiobuttons(filtered_jobs, pop_df, full_percap)
+        
     show_about_text()
-    
-    df_to_plot, mode = show_statistics(filtered_jobs, pop_df)
-    
-    if mode == "Jobb per 1 000 invånare":
-        show_map_per_capita(full_percap)
