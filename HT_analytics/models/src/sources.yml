@@ -6,6 +6,9 @@ sources:
         identifier: job_ads # namnet i databasen
       - name: stg_skill # smeknamn
         identifier: job_ads__must_have__skills # namnet i databasen
+      - name: stg_nice_skill
+        identifier: job_ads__nice_to_have__skills
+
         meta: # This metadata specifies the corresponding Dagster asset for this dbt source.
           dagster:
             asset_key: ['dlt_jobads_source_jobsearch_resource']
