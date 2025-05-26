@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: fct_job_ads
+    description: "Faktatabell med alla jobbannonser"
+    columns:
+      - name: job_details_id
+        description: "Primärnyckel för jobbdetaljer"
+        tests:
+          - unique
+          - not_null
+
+      - name: application_deadline
+        description: "Kolla så att sista ansökningsdatum är senare än publikation"
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "> publication_date"
+              where: "application_deadline IS NOT NULL AND publication_date IS NOT NULL"
+
+  - name: dim_employer
+    description: "Dimensionstabell: arbetsgivare"
+    columns:
+      - name: employer_id
+        description: "Primärnyckel för arbetsgivare"
+        tests:
+          - unique
+          - not_null
+
+      - name: employer_workplace
+        description: "Arbetsgivarens namn eller plats"
+        tests:
+          - not_null
+
+      - name: workplace_municipality
+        description: "Kommun"
+        tests:
+          - not_null
+
+  # … övriga modeller …
