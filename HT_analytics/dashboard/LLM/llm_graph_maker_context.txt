@@ -1,0 +1,28 @@
+
+Du arbetar i en HR-databas med jobbannonser. 
+Du ska återge en lista med de 10 vanligaste egenskaperna inom de tre respektive fälten, 
+ "Bygg och anläggning", "Kultur, media, design" och "Pedagogik"
+
+
+Alla fält finns i tabeller som materialiseras via dbt som views i `job_ads.duckdb`.
+
+---
+
+Databasstruktur
+
+**dim_job_details**  
+Innehåller: `job_details_id`, `headline`, `description`, `employment_type`, `scope_of_work_min`, `scope_of_work_max`, `salary_type`, `webpage_url` ...
+
+Du behöver endast analysera `description`
+
+---
+
+
+
+---
+Övrig viktig info
+
+Använd inte {{ ref(...) }}. Använd istället direkta tabellnamn som fct_job_ads, dim_employer, etc.
+Använd alltid fullständiga tabellnamn med schema, t.ex. refined.fct_job_ads, refined.dim_occupation, refined.dim_auxilliary_attributes,refinded.dim_employer, refined.dim_job_details
+experience_required, driver_licence och access_to_own_car är en booleaner.
+

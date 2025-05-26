@@ -2,11 +2,12 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 from map_per_capita import show_map_per_capita
+from LLM.llm_graph_maker import get_properties
 
 def show_radiobuttons(filtered_jobs, pop_df, full_percap):
     mode = st.radio(
         "Välj vy:",
-        ("Antal jobb per kategori", "Jobb per 1 000 invånare", "Visa karta med antal jobb/kommun"),
+        ("Antal jobb per kategori", "Jobb per 1 000 invånare", "Visa karta med antal jobb/kommun", "Visa top 10 egenskaper"),
         index=0, horizontal=True
     )
     
@@ -20,6 +21,9 @@ def show_radiobuttons(filtered_jobs, pop_df, full_percap):
     elif mode == "Jobb per 1 000 invånare":
         df_to_plot, x, y, title, labels = show_jobs_per_1000_inhabitants(filtered_jobs, pop_df)
         build_fig(df_to_plot, x, y, title, labels)
+    elif mode == "Visa top 10 egenskaper":
+        properties = get_properties()
+        st.write(properties)
     else:
         show_map_per_capita(full_percap)
 
