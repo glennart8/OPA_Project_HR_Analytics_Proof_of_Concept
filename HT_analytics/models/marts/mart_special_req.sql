@@ -1,60 +1,46 @@
-WITH job_base AS (
-    SELECT
-        f.id AS job_id,
-        f.vacancies,
-        f.publication_date,
-        e.workplace_municipality,
-        f.job_details_id
-    FROM {{ ref('fct_job_ads') }} f
-    JOIN {{ ref('dim_employer') }} e ON f.employer_id = e.employer_id
-    WHERE e.workplace_municipality = 'Göteborg'
-      AND f.publication_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '3 months'
+{{ config(materialized='table') }}
+
+-- Simple mart showing skills needed, job titles, municipalities, and employers
+-- for jobs with special requirements (experience, license, or car access)
+
+WITH base_job_data AS (
+    
+    SELECT 
+        id as job_id,
+        _dlt_id,
+        occupation__label as job_title,
+        employer__workplace as employer,
+        workplace_address__municipality as municipality,
+        experience_required,
+        driving_license_required as driver_license,
+        access_to_own_car
+    FROM {{ source('job_ads', 'stg_ads') }}
+    WHERE experience_required = true
+       OR driving_license_required = true  
+       OR access_to_own_car = true
 ),
 
-skill_tags AS (
-    SELECT
-        _dlt_parent_id AS job_details_id,
-        label AS skill_label
-    FROM {{ ref('src_experience') }}
-),
-
-combined_skills AS (
-    SELECT
-        jb.job_id,
-        DATE_TRUNC('month', jb.publication_date) AS month,
-        jb.vacancies,
-        st.skill_label
-    FROM job_base jb
-    LEFT JOIN skill_tags st ON jb.job_details_id = st.job_details_id
-),
-
-monthly_skills_agg AS (
-    SELECT
-        skill_label,
-        month,
-        COUNT(DISTINCT job_id) AS num_ads,
-        SUM(vacancies) AS total_vacancies
-    FROM combined_skills
-    GROUP BY skill_label, month
-),
-
-with_change AS (
-    SELECT
-        skill_label,
-        month,
-        total_vacancies,
-        LAG(total_vacancies) OVER (PARTITION BY skill_label ORDER BY month) AS prev_month_vacancies
-    FROM monthly_skills_agg
+skills AS (
+    SELECT * FROM {{ ref('src_skills') }}
 )
 
-SELECT
-    skill_label,
-    month,
-    total_vacancies,
-    prev_month_vacancies,
-    CAST(
-        100.0 * (total_vacancies - prev_month_vacancies) / NULLIF(prev_month_vacancies, 0) AS INTEGER
-    ) || '%' AS percent_change
-FROM with_change
-WHERE prev_month_vacancies IS NOT NULL
-ORDER BY percent_change DESC, month
+
+SELECT DISTINCT
+    COALESCE(sk.skill_label, 'No specific skills listed') as skill_needed,
+    COALESCE(sk.skill_type, 'none') as skill_requirement_type,
+    jd.job_title,
+    jd.municipality,
+    jd.employer
+    
+FROM base_job_data jd
+LEFT JOIN skills sk ON (
+    jd.job_id = sk.job_id OR
+    jd._dlt_id = sk.job_id 
+)
+
+ORDER BY 
+    jd.municipality,
+    jd.employer,
+    jd.job_title,
+    sk.skill_type DESC, 
+    skill_needed

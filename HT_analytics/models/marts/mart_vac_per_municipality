@@ -1,0 +1,10 @@
+WITH mart_vac_per_municipality AS (SELECT * FROM {{ref('fct_job_ads')}})
+
+    SELECT
+        SUM(m.vacancies) AS total_vacancies,
+        e.workplace_municipality
+
+    FROM mart_vac_per_municipality m
+    LEFT JOIN refined.dim_employer e ON m.employer_id = e.employer_id
+    GROUP BY e.workplace_municipality
+    ORDER BY total_vacancies DESC
