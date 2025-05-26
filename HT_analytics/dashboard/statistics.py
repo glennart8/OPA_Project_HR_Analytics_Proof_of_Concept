@@ -22,8 +22,12 @@ def show_radiobuttons(filtered_jobs, pop_df, full_percap):
         df_to_plot, x, y, title, labels = show_jobs_per_1000_inhabitants(filtered_jobs, pop_df)
         build_fig(df_to_plot, x, y, title, labels)
     elif mode == "Visa top 10 egenskaper":
-        properties = get_properties()
-        st.write(properties)
+        fields = ["Pedagogik", "Bygg och anläggning", "Kultur, media, design"]
+        selected_field = st.selectbox("Välj yrkesfält:", fields)
+
+        with st.spinner("Analyserar jobbannonser..."):
+            result = get_properties(selected_field)
+            st.text(result)
     else:
         show_map_per_capita(full_percap)
 
