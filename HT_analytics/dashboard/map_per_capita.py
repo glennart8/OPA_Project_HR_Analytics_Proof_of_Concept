@@ -14,14 +14,14 @@ def show_map_per_capita(full_percap: pd.DataFrame):
     full_percap["label"] = (
         full_percap["label"]
         .str.strip()
-        .str.lower()
+        .str.title()
     )
     # Bygg en snabb lookup från label -> värde
     value_map = dict(zip(full_percap["label"], full_percap["value"]))
 
     # Loop igenom alla features i geo_data och lägg in jobb_per_1000
     for feat in geo_data["features"]:
-        kom = feat["properties"]["kom_namn"].strip().lower()
+        kom = feat["properties"]["kom_namn"].strip().title()
         feat["properties"]["kom_namn"] = kom
         feat["properties"]["jobb_per_1000"] = value_map.get(kom, None)
 
