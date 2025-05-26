@@ -5,22 +5,30 @@ import json
 import numpy as np
 import pandas as pd
 
-def show_map_per_capita(full_percap: "pd.DataFrame"):
-
-    # Ladda GeoJSON
+def show_map_per_capita(full_percap: pd.DataFrame):
+    # 1) Ladda GeoJSON
     with open("data/swedish_municipalities.geojson.txt", "r", encoding="utf-8") as f:
         geo_data = json.load(f)
 
-    # Säkerställ att kommunnamn matchar (strip + lower)
-    full_percap["label"] = full_percap["label"].str.strip().str.lower()
-    for f in geo_data["features"]:
-        f["properties"]["kom_namn"] = f["properties"]["kom_namn"].strip().lower()
+    # 2) Normalisera kommunnamn i din DataFrame och GeoJSON
+    full_percap["label"] = (
+        full_percap["label"]
+        .str.strip()
+        .str.lower()
+    )
+    # Bygg en snabb lookup från label -> värde
+    value_map = dict(zip(full_percap["label"], full_percap["value"]))
 
+    # Loop igenom alla features i geo_data och lägg in jobb_per_1000
+    for feat in geo_data["features"]:
+        kom = feat["properties"]["kom_namn"].strip().lower()
+        feat["properties"]["kom_namn"] = kom
+        feat["properties"]["jobb_per_1000"] = value_map.get(kom, None)
 
-    # Skapa karta
+    # 3) Skapa bas-kartan
     folium_map = folium.Map(location=[60.0, 15.0], zoom_start=5)
 
-    # Skapa threshold_scale: 6 nivåer från 0 upp till maxvärdet
+    # 4) Choropleth-lagret
     min_val = 0
     max_val = full_percap["value"].max()
     threshold_scale = list(np.linspace(min_val, max_val, 6))
@@ -39,6 +47,25 @@ def show_map_per_capita(full_percap: "pd.DataFrame"):
         reset=True,
     ).add_to(folium_map)
 
+    # 5) Lägg på transparent GeoJson-overlay med Tooltip
+    folium.GeoJson(
+        geo_data,
+        style_function=lambda feature: {
+            "fillColor": "transparent",
+            "color": "transparent",
+        },
+        tooltip=folium.GeoJsonTooltip(
+            fields=["kom_namn", "jobb_per_1000"],
+            aliases=["Kommun:", "Jobb/1000 inv:"],
+            localize=True,
+            labels=True,
+            sticky=False,
+        ),
+        name="Kommuner (hover)",
+    ).add_to(folium_map)
+
     folium.LayerControl().add_to(folium_map)
+
+    # 6) Visa i Streamlit
     st.title("Jobb per 1 000 invånare – per kommun")
     folium_static(folium_map)
