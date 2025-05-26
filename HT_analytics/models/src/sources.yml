@@ -4,3 +4,6 @@ sources:
     tables:
       - name: stg_ads # smeknamn
         identifier: job_ads # namnet i databasen
+        meta: # This metadata specifies the corresponding Dagster asset for this dbt source.
+          dagster:
+            asset_key: ['dlt_jobads_source_jobsearch_resource']
