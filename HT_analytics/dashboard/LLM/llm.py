@@ -70,3 +70,4 @@ def get_results(query):
     query_df = con.execute(query).df()
     return query_df
     
+    
