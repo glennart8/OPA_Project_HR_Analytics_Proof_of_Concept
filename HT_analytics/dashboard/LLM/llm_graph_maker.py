@@ -1,9 +1,3 @@
-# HR-byrån vill skapa en graf som visar vilka huvudsakliga egenskaper arbetsgivare inom ett visst yrkesområde söker hos jobbsökande. 
-# De vill publicera grafen på LinkedIn för att locka sökande med dessa egenskaper att kontakta byrån.
-# Det finns flera textkolumner i jobbannonsdata, till exempel description. 
-# Använd en LLM (stort språkmodell) för att analysera dessa kolumner och ta fram en analys. 
-# Lägg sedan till en visualisering baserad på analysen i din Streamlit-dashboard.
-
 # Låt LLM analysera kolumner som innehåller nyckelord för egenskaper
 #   - Ge LLM tillgång till databasen och väsentliga kolumner (description i alla fall)
 #   - Ge LLM kontexten att den ska leta efter "egenskaper" som söks
@@ -37,9 +31,9 @@
 
 from dotenv import load_dotenv
 import os
-import google.generativeai as genai
 import duckdb
-import streamlit as st
+import google.generativeai as genai
+from LLM.llm import get_results
 
 load_dotenv()  # Laddar .env-filen
 api_key = os.getenv("API_KEY")
@@ -48,33 +42,46 @@ genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-2.0-flash")
                               
     
-def get_properties():
-
-    with open("LLM/llm_graph_maker_context.txt", "r") as file:
+def get_properties(field_name: str):
+    # kontext
+    with open("LLM/llm_graph_maker_context.txt", "r", encoding="utf-8") as file:
         llm_graph_maker_context = file.read()
 
-    # Kanske borde lägga in en if-sats eller nåt som gör att context_text endast läses in första gången och inte kommande sökningar
+    # SQL
+    query = f"""
+    SELECT description
+    FROM refined.dim_job_details j
+    JOIN refined.dim_occupation o ON j.job_details_id = o.occupation_id
+    WHERE o.occupation_field = '{field_name}'
+    AND description IS NOT NULL
+    """
+
+    # Hämta data
+    df = get_results(query)
+
+    # Sammanfoga beskrivningar
+    all_descriptions = "\n\n".join(df["description"].dropna().tolist())[:10000]  # Begränsa längd
+
+    # Prompt till LLM
     prompt = f"""
-            Kan du hämta ut ord som defineras som "egenskaper" i kolumnen 'description' i vår databas. 
-            Sammanställ dessa och visa de 10 mest förekommande orden i en lista.
-            
-            Du måste använda denna SQL-kod för att få tillgång till datan:
-    
-            select description from refined.job_details
+        Du är en språkmodell som hjälper HR att analysera jobbannonser.
 
-            ## Kontext:
-            {llm_graph_maker_context}
-            
-            # """
+        Yrkesområde: {field_name}
 
+        Din uppgift:
+        - Läs igenom jobbannonsernas beskrivningar (description).
+        - Identifiera och lista de 10 vanligaste personliga egenskaperna som arbetsgivare söker.
+        - Returnera en enkel lista numrerad 1-10.
+
+        --- Kontext ---
+        {llm_graph_maker_context}
+
+        --- Jobbannonser ---
+        {all_descriptions}
+        """
+
+    # Kör LLM
     response = model.generate_content(prompt)
-    output = response.text
+    return response.text
 
-    # # Tar bort markdown-klamrar
-    # clean_sql = raw_sql.strip().removeprefix("```sql").removesuffix("```").strip()
-
-    return output
-
-
-   
     
