@@ -54,7 +54,7 @@ with st.container():
             show_general_statistics(filtered_jobs)
         else:
             st.info("Ingen statistik tillgänglig för det valda filtret.")
-
+                                                
 # -----------------------
 #   RESULTAT OCH ANALYS
 # -----------------------
