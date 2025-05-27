@@ -18,5 +18,3 @@ Du behöver endast analysera `description`
 
 ---
 
-
-
