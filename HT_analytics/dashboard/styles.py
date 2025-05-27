@@ -18,5 +18,11 @@ def load_background_style():
     [data-testid="stMetricValue"] {
         font-size: 20px;
     }
+    
+        /* Header styling */
+    header.stAppHeader {
+    background: transparent !important;
+    }
+    
     </style>
     """
