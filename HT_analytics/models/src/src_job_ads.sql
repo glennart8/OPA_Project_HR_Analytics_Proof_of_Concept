@@ -14,5 +14,6 @@ select
     driving_license_required as driver_license,
     access_to_own_car,
     publication_date,
+    occupation__concept_id,
 
 from stg_job_ads
