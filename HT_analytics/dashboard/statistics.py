@@ -90,12 +90,12 @@ def show_bubble_chart(result):
     )
 
     fig.update_layout(
-        title_font_color='Gold',
+        # title_font_color='Gold',
         xaxis=dict(showticklabels=False, visible=False),
         yaxis=dict(showticklabels=False, visible=False),
         plot_bgcolor="#181817",
         paper_bgcolor='#181817',
-        title_font=dict(size=24, color="white", family="Arial"),
+        title_font=dict(size=24, color="#F7E7CE", family="Arial"),
         font=dict(color="White"),
         height=500,
         margin=dict(l=20, r=20, t=40, b=20)
