@@ -1,6 +1,7 @@
 import dlt
 from pathlib import Path
 import sys
+from dagster import define_asset_job  # <-- Lägg till denna import!
 from dagster_dlt import dlt_assets
 
 # === DATABASE ===
@@ -26,6 +27,7 @@ pipeline = dlt.pipeline(
     dlt_pipeline=pipeline
 )
 def dlt_load():
-    pipeline.run()  # OBS: INTE "yield from"
+    pipeline.run() 
 
-# DBT
+# === DAGSTER-JOB ===
+dlt_job = define_asset_job("dlt_job", selection=[dlt_load])
