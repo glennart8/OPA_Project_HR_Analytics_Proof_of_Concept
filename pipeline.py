@@ -57,7 +57,7 @@ def run_pipeline(query, table_name, occupation_fields):
         
         # Kör pipelinen med datakällan vi skapade (jobsearch_resource) och skickar in API-parametrarna
         pipeline.run( # using run() to start the pipeline
-            jobsearch_resource(params=params), table_name=table_name # varför skrivs table_name in som inparameter här?
+            jobsearch_resource(params=params), table_name=table_name 
         )
         
  

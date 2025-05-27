@@ -13,9 +13,8 @@ Databasstruktur
 Innehåller: `job_details_id`, `headline`, `description`, `employment_type`, `scope_of_work_min`, `scope_of_work_max`, `salary_type`, `webpage_url` ...
 
 Du behöver endast analysera `description`
-Återge ENDAST listan
-Räkna och visa det ord som nämns flest gånger högst upp och i fallande ordning
+** Räkna och sammanställ antal förekomster av de ord som nämns flest gånger
+Återge ENDAST ett json-objekt 
 
 ---
-
 

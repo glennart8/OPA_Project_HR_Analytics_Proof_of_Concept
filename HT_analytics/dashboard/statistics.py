@@ -3,11 +3,12 @@ import plotly.express as px
 import pandas as pd
 from map_per_capita import show_map_per_capita
 from LLM.llm_graph_maker import get_properties
+import numpy as np
 
 def show_radiobuttons(filtered_jobs, pop_df, full_percap):
     mode = st.radio(
         "Välj vy:",
-        ("Antal jobb per kategori", "Jobb per 1 000 invånare", "Visa karta med antal jobb/kommun", "Visa top 10 egenskaper"),
+        ("Antal jobb per kategori", "Jobb per 1 000 invånare", "Visa karta med antal jobb/kommun", "Top 10 egenskaper"),
         index=0, horizontal=True
     )
     
@@ -21,13 +22,14 @@ def show_radiobuttons(filtered_jobs, pop_df, full_percap):
     elif mode == "Jobb per 1 000 invånare":
         df_to_plot, x, y, title, labels = show_jobs_per_1000_inhabitants(filtered_jobs, pop_df)
         build_fig(df_to_plot, x, y, title, labels)
-    elif mode == "Visa top 10 egenskaper":
+    elif mode == "Top 10 egenskaper":
         fields = ["Pedagogik", "Bygg och anläggning", "Kultur, media, design"]
         selected_field = st.selectbox("Välj yrkesfält:", fields)
 
         with st.spinner("Analyserar jobbannonser..."):
             result = get_properties(selected_field)
-            st.text(result)
+            # st.text(result)
+            show_bubble_chart(result)            
     else:
         show_map_per_capita(full_percap)
 
@@ -57,6 +59,49 @@ def show_jobs_per_categories(filtered_jobs):
 
     return df_to_plot, x, y, title, labels, color
 
+def show_bubble_chart(result):
+    df = pd.DataFrame(result)
+
+    np.random.seed(1)
+    df["X"] = np.random.rand(len(df)) * 5
+    df["Y"] = np.random.rand(len(df)) * 3
+
+    min_font, max_font = 10, 28
+    min_val = df["Värde"].min()
+    max_val = df["Värde"].max()
+    
+    # Skapa TextSize kolumn med enkel formel
+    df["TextSize"] = min_font + (df["Värde"] - min_val) / (max_val - min_val) * (max_font - min_font)
+
+    fig = px.scatter(
+        df,
+        x="X", y="Y",
+        size="Värde",
+        text="Egenskap",
+        color="Värde",
+        color_continuous_scale="Cividis",
+        size_max=100,
+        title="Top 10 efterfrågade egenskaper",
+    )
+
+    fig.update_traces(
+        textposition="middle center",
+        textfont=dict(size=df["TextSize"]),
+    )
+
+    fig.update_layout(
+        # title_font_color='Gold',
+        xaxis=dict(showticklabels=False, visible=False),
+        yaxis=dict(showticklabels=False, visible=False),
+        plot_bgcolor="#181817",
+        paper_bgcolor='#181817',
+        title_font=dict(size=24, color="#F7E7CE", family="Arial"),
+        font=dict(color="White"),
+        height=500,
+        margin=dict(l=20, r=20, t=40, b=20)
+    )
+
+    st.plotly_chart(fig)
 
 
 def show_jobs_per_1000_inhabitants(filtered_jobs, pop_df):
@@ -85,7 +130,7 @@ def build_fig(df_to_plot, x, y, title, labels, color=None):
     fig = px.bar(
         df_to_plot,
         x=x, y=y,
-        color=color,  # <-- ny parameter här
+        color=color,
         orientation="h",
         title=title,
         labels=labels,
