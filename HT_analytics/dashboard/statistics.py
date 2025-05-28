@@ -73,6 +73,8 @@ def show_bubble_chart(result):
     # Skapa TextSize kolumn med enkel formel
     df["TextSize"] = min_font + (df["Värde"] - min_val) / (max_val - min_val) * (max_font - min_font)
 
+    df["Värde"] = df["Värde"].fillna(0).astype(float)
+    
     fig = px.scatter(
         df,
         x="X", y="Y",
