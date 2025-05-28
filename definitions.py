@@ -1,5 +1,5 @@
-from orchestration_again.dbt_assets import dbt_models, dbt_job, dbt_resource
-from orchestration_again.dlt_assets import dlt_load, dlt_job, dlt_resource
+from dbt_assets import dbt_models, dbt_job, dbt_resource, dlt_load_sensor
+from dlt_assets import dlt_load, dlt_job, dlt_resource, schedule_dlt
 from dagster import Definitions
 from dagster_dbt import DbtCliResource
 from pathlib import Path
@@ -7,14 +7,14 @@ import dagster as dg
 
 
 # Justera till din projektsökväg!
-DBT_PROJECT_DIR = Path(__file__).resolve().parents[2] 
-DBT_PROFILES_DIR = None  # eller din profiles_dir om du har en sådan
+DBT_PROJECT_DIR = Path(__file__).parent / "HT_analytics"
+DBT_PROFILES_DIR = Path.home() / ".dbt"
 
 defs = dg.Definitions(
                     assets=[dlt_load, dbt_models], 
                     resources={"dlt": dlt_resource,
                                "dbt": dbt_resource},
                     jobs=[dlt_job, dbt_job],
-                    # schedules=[schedule_dlt],
-                    # sensors=[dlt_load_sensor],
+                    schedules=[schedule_dlt],
+                    sensors=[dlt_load_sensor],
                     )

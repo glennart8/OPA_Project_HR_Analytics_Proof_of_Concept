@@ -7,7 +7,7 @@ from dagster import define_asset_job, AssetSelection
 
 # === DBT KONFIGURATION ===
 # Sökväg till dbt-projektet (HT_analytics)
-dbt_project_directory = Path(__file__).resolve().parents[2]  # Går upp till HT_analytics
+dbt_project_directory = Path(__file__).parent / "HT_analytics"
 profiles_dir = Path.home() / ".dbt" 
 
 # Initiera DbtProject
@@ -35,3 +35,8 @@ dbt_job = define_asset_job(
     selection = AssetSelection.all() 
 )
 
+# === SENSOR ===
+@dg.asset_sensor(asset_key=dg.AssetKey("dlt_jobads_source_jobsearch_resource"),
+                 job_name="dbt_job")
+def dlt_load_sensor():
+    yield dg.RunRequest()

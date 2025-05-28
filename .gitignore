@@ -1,6 +1,6 @@
 # DATABASE
 *.duckdb
-
+.tmp*
 target/
 
 # Ignore Python stuff
