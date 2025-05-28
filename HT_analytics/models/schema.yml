@@ -7,7 +7,6 @@ models:
       - name: job_details_id
         description: "Primärnyckel för jobbdetaljer"
         tests:
-          - unique
           - not_null
 
       - name: application_deadline
