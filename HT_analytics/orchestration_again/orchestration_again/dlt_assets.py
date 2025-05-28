@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 from dagster import define_asset_job  # <-- Lägg till denna import!
 from dagster_dlt import dlt_assets
+from dagster_dlt import DagsterDltResource, dlt_assets
 
 # === DATABASE ===
 db_path = str(Path(__file__).parents[2] / "job_ads.duckdb")
@@ -20,6 +21,8 @@ pipeline = dlt.pipeline(
     dataset_name="staging",
     destination=dlt.destinations.duckdb(db_path)
 )
+
+dlt_resource = DagsterDltResource()
 
 # === DAGSTER-ASSET ===
 @dlt_assets(
