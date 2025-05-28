@@ -15,31 +15,31 @@ def _get_ads(url_for_search, params):
     return response.json()
 
 # Deklarerar en DLT-resource som strömmar jobbannonser från API:t och lägger till dem i pipelinen utan att skriva över tidigare data
-@dlt.resource(write_disposition="append")
-def jobsearch_resource(context):
-    # Om inga params skickas in, använd dessa default‐värden:
-    params = context.metadata.get("params", {
-        "q": "",
-        "limit": 100,
-        "occupation_fields": ["j7Cq_ZJe_GkT", "9puE_nYg_crq", "MVqp_eS8_kDZ"],
-    })
-
+@dlt.resource(write_disposition="merge", primary_key="id", table_name = "job_ads")
+def jobsearch_resource():
+    occupation_fields =  ["j7Cq_ZJe_GkT", "9puE_nYg_crq", "MVqp_eS8_kDZ"]
+    
     url = "https://jobsearch.api.jobtechdev.se/search"
-    for field in params["occupation_fields"]:
+    for occ in occupation_fields:
+        params = {
+            "q": "",
+            "limit": 100,
+            "occupation-field" : occ
+        }
         offset = 0
         while True:
             page_params = {
                 "q": params["q"],
                 "limit": params["limit"],
                 "offset": offset,
-                "occupation-field": field,
+                "occupation-field": occ,
             }
             data = _get_ads(url, page_params)
             hits = data.get("hits", [])
             if not hits:
                 break
             yield from hits
-            if len(hits) < params["limit"]:
+            if len(hits) < params["limit"] or offset > 1900:
                 break
             offset += params["limit"]
 
@@ -59,20 +59,21 @@ def run_pipeline(query, table_name, occupation_fields):
         pipeline.run( # using run() to start the pipeline
             jobsearch_resource(params=params), table_name=table_name 
         )
-        
+
  
 # För att det ska funka med dagster behöver vi en dlt-source som ska innehålal en dlt-resource
 @dlt.source
 def jobads_source():
-    return jobsearch_resource 
-  
+    return jobsearch_resource() 
 
-if __name__ == "__main__":
-    working_directory = Path(__file__).parent
-    os.chdir(working_directory)
 
-    query = ""
-    table_name = "job_ads"
-    occupation_fields = ("j7Cq_ZJe_GkT", "9puE_nYg_crq", "MVqp_eS8_kDZ") # Teknisk inriktning, "Hälso sjukvård", "Pedagogik"
 
-    run_pipeline(query, table_name, occupation_fields)
+# if __name__ == "__main__":
+    # working_directory = Path(__file__).parent
+    # os.chdir(working_directory)
+
+    # query = ""
+    # table_name = "job_ads"
+    # occupation_fields = ("j7Cq_ZJe_GkT", "9puE_nYg_crq", "MVqp_eS8_kDZ") # Teknisk inriktning, "Hälso sjukvård", "Pedagogik"
+
+    # run_pipeline(query, table_name, occupation_fields)
