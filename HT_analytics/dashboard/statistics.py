@@ -4,11 +4,12 @@ import pandas as pd
 from map_per_capita import show_map_per_capita
 from LLM.llm_graph_maker import get_properties
 import numpy as np
+from linus_test import linus_stats
 
 def show_radiobuttons(filtered_jobs, pop_df, full_percap):
     mode = st.radio(
         "Välj vy:",
-        ("Antal jobb per kategori", "Jobb per 1 000 invånare", "Visa karta med antal jobb/kommun", "Top 10 egenskaper"),
+        ("Antal jobb per kategori", "Jobb per 1 000 invånare", "Visa karta med antal jobb/kommun", "Top 10 egenskaper", "Linus stats"),
         index=0, horizontal=True
     )
     
@@ -29,7 +30,11 @@ def show_radiobuttons(filtered_jobs, pop_df, full_percap):
         with st.spinner("Analyserar jobbannonser..."):
             result = get_properties(selected_field)
             # st.text(result)
-            show_bubble_chart(result)            
+            show_bubble_chart(result)   
+
+    elif mode == "Linus stats":
+        linus_stats()
+
     else:
         show_map_per_capita(full_percap)
 
