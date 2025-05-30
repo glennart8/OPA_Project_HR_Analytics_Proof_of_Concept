@@ -9,7 +9,7 @@ from linus_test import linus_stats
 def show_radiobuttons(filtered_jobs, pop_df, full_percap):
     mode = st.radio(
         "Välj vy:",
-        ("Antal jobb per kategori", "Jobb per 1 000 invånare", "Visa karta med antal jobb/kommun", "Top 10 egenskaper", "Linus stats"),
+        ("Antal jobb per kategori", "Jobb per 1 000 invånare", "Visa karta med antal jobb/kommun", "Top 10 egenskaper", "Job Skills"),
         index=0, horizontal=True
     )
     
@@ -29,10 +29,9 @@ def show_radiobuttons(filtered_jobs, pop_df, full_percap):
 
         with st.spinner("Analyserar jobbannonser..."):
             result = get_properties(selected_field)
-            # st.text(result)
             show_bubble_chart(result)   
 
-    elif mode == "Linus stats":
+    elif mode == "Job Skills":
         linus_stats()
 
     else:

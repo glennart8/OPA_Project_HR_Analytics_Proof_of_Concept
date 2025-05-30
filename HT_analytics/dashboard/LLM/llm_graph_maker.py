@@ -1,7 +1,6 @@
 import json
 from dotenv import load_dotenv
 import os
-import duckdb
 import google.generativeai as genai
 from LLM.llm import get_results
 
@@ -26,7 +25,7 @@ def get_properties(field_name: str):
     AND description IS NOT NULL
     """
     df = get_results(query)
-    all_descriptions = "\n\n".join(df["description"].dropna().tolist())[:30000]
+    all_descriptions = "\n\n".join(df["description"].dropna().tolist())[:15000]
 
     # Skapa prompt
     prompt = f"""

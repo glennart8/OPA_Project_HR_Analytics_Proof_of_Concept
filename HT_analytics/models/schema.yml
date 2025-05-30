@@ -35,4 +35,3 @@ models:
         tests:
           - not_null
 
-  # … övriga modeller …

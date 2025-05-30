@@ -1,12 +1,10 @@
 import streamlit as st
 from dashboard_common import get_connection
-
 con = get_connection()
 
 #############################    TOP-CONTAINER    ##################################
 with st.container():
     col_filter, col_statistik = st.columns([1, 1])
-   
    
     def filter_jobs ():
         # --- FILTRERING ---
@@ -43,7 +41,6 @@ with st.container():
                     
     def get_jobs(municipality_filter, occupation_field_filter, occupation_filter):                    
         # --- HÄMTA FILTRERAD DATA EFTER FILTERNING --- 
-            # VAR TVUNGEN ATT HA DISTINCT HÄR, ANNARS KOM DUBLETTER MED
         query = """
             SELECT DISTINCT * 
             FROM marts.mart_vacancies_by_mun_field_occ
@@ -74,5 +71,4 @@ with st.container():
             .drop(columns=["workplace_municipality", "occupation_field", "job_details_id"])
             .rename(columns={"occupation": "Yrke", "employer_name": "Arb.givare", "vacancies": "Antal tjänster", "employer_organization_number": "Org.Nr"})
         )
-        
         return filtered_jobs, filtered_jobs_to_show

@@ -1,14 +1,3 @@
--- visa procentuell ökning/minskning jämför med tidigare år? Visar ju bara aktiva annonser vilket inte gör det möjligt...
-
--- jämför antalet annonser inom respk. arbetsområde sett över tid (3 mån), visa ökningen i procent?
-
--- 1. Filtrera annonser publicerade de senaste 3 månaderna
--- 2. Gruppera på både månad och yrkesgrupp
--- 3. Summera antal tjänster (vacancies)
--- 4. Räkna månatlig procentuell förändring per grupp
-
---Hög procentull ökningar visar på trender, medan 0 eller låg procent visar att en viss yrkesgrupp har svårt att tillsätta personal 
-
 WITH mart_trends AS (
     SELECT 
         m.vacancies,

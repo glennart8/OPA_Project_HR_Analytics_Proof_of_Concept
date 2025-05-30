@@ -18,8 +18,3 @@ SELECT
 FROM mart_chosen_vacancy m
 JOIN refined.dim_auxilliary_attributes a ON m.auxilliary_attributes_id = a.id_aux
 JOIN refined.dim_job_details jd ON m.job_details_id = jd.job_details_id
-
-{# WHERE 
-    e.workplace_municipality IS NOT NULL
-    AND e.employer_name IS NOT NULL
-    AND o.occupation IS NOT NULL #}
