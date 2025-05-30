@@ -1,16 +1,13 @@
-
-
 import streamlit as st
 st.set_page_config(layout="wide")
 import pandas as pd
 from dashboard_common import get_connection
 from styles import load_background_style
 from results import ask_gemeni, show_filtered_jobs
-from statistics import per_capita_df, build_fig, show_radiobuttons 
+from statistics import per_capita_df, show_radiobuttons 
 from about import show_about_text
 from general_statistics import show_general_statistics
 from top_container import filter_jobs, get_jobs, show_jobs
-from map_per_capita import show_map_per_capita
 
 
 # -----------

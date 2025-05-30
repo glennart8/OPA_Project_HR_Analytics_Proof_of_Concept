@@ -1,4 +1,3 @@
-
 # Bakgrund, textfärger i dataframe mm
 def load_background_style():
     return """

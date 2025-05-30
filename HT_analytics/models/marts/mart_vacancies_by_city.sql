@@ -10,7 +10,3 @@ WITH mart_by_city AS (SELECT * FROM {{ref ('fct_job_ads')}})
     GROUP BY LOWER(e.workplace_city)
     ORDER BY number_of_vacancies DESC
     
-
---------------------------
-
-

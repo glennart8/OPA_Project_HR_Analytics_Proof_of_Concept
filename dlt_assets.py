@@ -1,8 +1,6 @@
 import dlt
 from pathlib import Path
-import sys
 import dagster as dg
-from dagster import define_asset_job  # <-- Lägg till denna import!
 from dagster_dlt import DagsterDltResource, dlt_assets
 
 # === DATABASE ===

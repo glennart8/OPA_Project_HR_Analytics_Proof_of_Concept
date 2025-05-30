@@ -1,8 +1,5 @@
 import dlt
 import requests
-import json
-from pathlib import Path
-import os
 
 # Definierar en hjälpfunktion som gör ett GET-anrop mot Jobtechs API och returnerar JSON-svaret som Python-objekt
 def _get_ads(url_for_search, params):
@@ -65,7 +62,6 @@ def run_pipeline(query, table_name, occupation_fields):
 @dlt.source
 def jobads_source():
     return jobsearch_resource() 
-
 
 
 # if __name__ == "__main__":
